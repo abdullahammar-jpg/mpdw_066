@@ -6,3 +6,8 @@ x
 ```
 
 ![](D:\My Documents\Downloads\hand.jpeg)
+
+```{r}
+y <- 8
+x + y
+```
