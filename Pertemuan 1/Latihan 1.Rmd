@@ -1,1 +1,8 @@
+# Latihan MPDW
 
+```{r}
+x <- 10
+x
+```
+
+![](D:\My Documents\Downloads\hand.jpeg)
