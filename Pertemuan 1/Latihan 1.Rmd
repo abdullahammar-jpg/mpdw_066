@@ -5,7 +5,7 @@ x <- 10
 x
 ```
 
-![](D:\My Documents\Downloads\hand.jpeg)
+![](D:\My%20Documents\Downloads\hand.jpeg)
 
 ```{r}
 y <- 20

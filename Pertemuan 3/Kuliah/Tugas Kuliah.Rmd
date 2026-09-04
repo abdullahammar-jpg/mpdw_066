@@ -17,13 +17,16 @@ library(forecast)
 library(graphics)
 library(TTR)
 library(TSA)
+library(lmtest)
 ```
 
 ```{r}
 library(readxl)
-df <- read.csv("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 2\\Kuliah\\ipm_panel_wide_2010_2021.csv")
+df <- read.csv("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\Kuliah\\ipm_panel_wide_2010_2021.csv")
 head(df)
 ```
+
+Data yang digunakan adalah data IPM dari provinsi Aceh denga dengan periode 2010-2021.
 
 ```{r}
 library(tidyr)
@@ -65,6 +68,44 @@ aceh.ts <- ts(
 ```{r}
 autoplot(aceh.ts)
 ```
+Berdasarkan plot, dapat diketahui bahwa IPM aceh dari tahun ke tahun mengalami peningkatan.
+
+```{r}
+cor(data_aceh$Tahun, data_aceh$Nilai)
+```
+Berdasarkan plot dan korelasi, dapat dipastikan bahwa peubah Tahun dengan nilai IPM memiliki hubungan yang positif dengan nilai korelasi sebesar 0.9944628. Selanjutnya, model regresi dapat dibuat.
+
+# Regresi
+
+```{r}
+model<- lm(Nilai~Tahun, data = data_aceh)
+summary(model)
+```
+Model yang dihasilkan adalah
+$$
+y_i = -958.10 + 0.510x_t
+$$
+Berdasarkan ringkasan model dapat diketahui p-value dari uji-F < 0.05. Artinya, minimal terdapat satu variabel yang berpengaruh nyata terhadap model. Hasil uji-t parsial kedua parameter regresi, yaitu intersep dan koefisien regresi juga menunjukkan hal yang sama, yaitu memiliki p-value < α (5%) sehingga nyata dalam taraf 5%. Selanjutnya dapat dilihat juga nilai R2=0.9944628. Artinya, sebesar 99.45% keragaman nilai IPM dapat dijelaskan oleh peubah tahun. Hasil ini menunjukkan hasil yang bagus, seolah mendapatkan hasil terbaik. Namun, kita perlu melakukan uji terhadap sisaannya seperti berikut ini.
+
+## Uji Asumsi
+
+```{r}
+#sisaan dan fitted value
+sisaan<- residuals(model)
+fitValue<- predict(model)
+
+#Diagnostik dengan eksploratif
+par(mfrow = c(2,2))
+qqnorm(sisaan)
+qqline(sisaan, col = "steelblue", lwd = 2)
+plot(fitValue, sisaan, col = "steelblue", pch = 20, xlab = "Sisaan", ylab = "Fitted Values", main = "Sisaan vs Fitted Values")
+abline(a = 0, b = 0, lwd = 2)
+hist(sisaan, col = "steelblue")
+plot(seq(1,12,1), sisaan, col = "steelblue", pch = 20, xlab = "Sisaan", ylab = "Order", main = "Sisaan vs Order")
+lines(seq(1,12,1), sisaan, col = "red")
+abline(a = 0, b = 0, lwd = 2)
+```
+Berdasarkan plot, dapat diketahui bahwa data ini sisaannya cenderung menyebar normal. Berdasarkan plot Sisaan vs Order, terdapat indikasi adanya autokorelasi pada sisaan. Oleh karena itu diperlukan uji formal untuk memastikan hal ini.
 
 # Uji Autokorelasi
 ## Box test
@@ -75,24 +116,26 @@ Box.test(aceh.ts, lag = 3, type = "Ljung-Box")
 Box.test(aceh.ts, lag = 4, type = "Ljung-Box")
 ```
 
-## ACF
+## Plot sisaan
 
 ```{r}
-acf(aceh.ts)
+acf(sisaan)
 ```
 
 ```{r}
-ggAcf(aceh.ts)
+pacf(sisaan)
 ```
+Berdasarkan plot ACF dan PACF, terlihat semua masih berada dalam rentang batas dan tidak ada lag yang signifikan. Akan tetapi, untuk lebih memastikan perlu dilakukan uji formal.
 
 ## DW-Test
 
 ```{r}
-library(lmtest)
-
-model <- lm(Nilai ~ Tahun, data = data_aceh)
+#Deteksi autokorelasi dengan uji-Durbin Watson
+#H0: tidak ada autokorelasi
+#H1: ada autokorelasi
 dwtest(model)
 ```
+Berdasarkan uji formal, didapatkan nilai DW sebesar 0.95635 dan p-value sebesar 0.00, maka Tolak H0. Artinya terdapat cukup bukti untuk mengatakan bahwa terdapat autokorelasi sisaan. Penanganan yang akan digunakan menggunakan dua metode, yaitu Cochrane-Orcutt dan Hildret-Lu.
 
 # Penanganan
 ## Cochrane-Orcutt
@@ -103,6 +146,11 @@ library(orcutt)
 modelCO<-cochrane.orcutt(model)
 modelCO
 ```
+
+Model yang dihasilkan adalah
+$$
+y_i=-951.941111 + 0.506876x_t
+$$
 
 ### Transformasi Manual
 
@@ -125,6 +173,8 @@ summary(model.t)
 dwtest(model.t)
 dwtest(modelCO)
 ```
+
+Setelah dilakukan penanganan dengan menggunakan Cochrane-Orcutt, ternyata masih terdapat autokorelasi. Hal ini dapat dipastikan dari nilai p-value setelah dilakukan penanganan sebesar 0.01797.
 
 ## Hildreth-Lu
 
@@ -163,14 +213,27 @@ abline(v = tabOpt[tabOpt$SSE==min(tabOpt$SSE),"rho"], lty = 2, col="red",lwd=2)
 text(x=0.535, y=0.3096072, labels = "rho=0.535", cex = 0.8)
 ```
 
+Perhitungan yang dilakukan aplikasi R menunjukkan bahwa nilai ρ optimum, yaitu saat SSE terkecil terdapat pada nilai ρ = 0.535. Hal tersebut juga ditunjukkan pada plot. Selanjutnya, model dapat didapatkan dengan mengevaluasi nilai ρ ke dalam fungsi hildreth.lu.func, serta dilanjutkan dengan pengujian autokorelasi dengan uji Durbin-Watson. Namun, setelah pengecekan tersebut tidak lupa koefisien regresi tersebut digunakan untuk transformasi balik. Persamaan hasil transformasi itulah yang menjadi persamaan sesungguhnya.
+
 ```{r}
 modelHL <- hildreth.lu.func(0.535, model)
 summary(modelHL)
 ```
 
 ```{r}
+cat("y = ", coef(modelHL)[1]/(1-0.341), "+", coef(modelHL)[2],"x", sep = "")
+```
+Setelah dilakukan tranformasi balik, didapatkan model dengan metode Hildreth-Lu sebagai berikut.
+$$
+y_i = -671.7108 + 0.5068807x_t
+$$
+
+```{r}
 dwtest(modelHL)
 ```
+
+Hasil uji durbin watson menunjukkan p-value dari model masih kurang dari 0.05. Hal ini menandakan bahwa autokorelasi pada model tidak dapat ditangani dengan menggunakan Cochrane-Orcutt maupun Hildreth Lu. 
+Selanjutnya, akan dibandingkan nilai SSE dari ketiga metode (metode awal, metode Cochrane-Orcutt, dan Hildreth-Lu).
 
 # Perbandingan
 
@@ -187,4 +250,10 @@ colnames(akurasi) <- c("Model Awal", "Model Cochrane-Orcutt", "Model Hildreth-Lu
 row.names(akurasi) <- c("SSE","MSE")
 akurasi
 ```
+
+Berdasarkan hasil tersebut dapat diketahui bahwa hasil penanganan autokorelasi dengan metode Cochrane-Orcutt dan Hildreth-Lu memiliki SSE yang sama, sebesar 0.3096072 dan lebih baik dibandingkan model awal, walaupun autokorelasi masih terjadi, yaitu sebesar 0.41529149.
+
+# Kesimpulan
+
+Autokorelasi yang terdapat pada data IPM Provinsi Aceh terjadi akibat adanya korelasi di antara unsur penyusunnya. Indikator IPM yang erat hubungannya dengan perekonomian sangat rawan menjadi penyebab adanya autokorelasi. Adanya autokorelasi menyebabkan model regresi kurang baik karena akan meningkatkan galatnya. Autokorelasi dapat dideteksi secara eksploratif melalui plot sisaan, ACF, dan PACF, serta dengan uji formal Durbin-Watson. Namun, autokorelasi tersebut tidak dapat ditangani dengan metode Cochrane-Orcutt maupun Hildreth-Lu. Kedua metode menghasilkan nilai SSE yang sama, artinya keduanya baik untuk digunakan. 
 
