@@ -83,9 +83,9 @@ summary(model)
 ```
 Model yang dihasilkan adalah
 $$
-y_i = -958.10 + 0.510x_t
+y_i = -958.10369 + 0.50997x_t
 $$
-Berdasarkan ringkasan model dapat diketahui p-value dari uji-F < 0.05. Artinya, minimal terdapat satu variabel yang berpengaruh nyata terhadap model. Hasil uji-t parsial kedua parameter regresi, yaitu intersep dan koefisien regresi juga menunjukkan hal yang sama, yaitu memiliki p-value < α (5%) sehingga nyata dalam taraf 5%. Selanjutnya dapat dilihat juga nilai R2=0.9944628. Artinya, sebesar 99.45% keragaman nilai IPM dapat dijelaskan oleh peubah tahun. Hasil ini menunjukkan hasil yang bagus, seolah mendapatkan hasil terbaik. Namun, kita perlu melakukan uji terhadap sisaannya seperti berikut ini.
+Berdasarkan ringkasan model dapat diketahui p-value dari uji-F < 0.05. Artinya, minimal terdapat satu variabel yang berpengaruh nyata terhadap model. Hasil uji-t parsial kedua parameter regresi, yaitu intersep dan koefisien regresi juga menunjukkan hal yang sama, yaitu memiliki p-value < α (5%) sehingga nyata dalam taraf 5%. Selanjutnya dapat dilihat juga nilai R2=0.989. Artinya, sebesar 98.9% keragaman nilai IPM dapat dijelaskan oleh peubah tahun. Hasil ini menunjukkan hasil yang bagus, seolah mendapatkan hasil terbaik. Namun, kita perlu melakukan uji terhadap sisaannya seperti berikut ini.
 
 ## Uji Asumsi
 
