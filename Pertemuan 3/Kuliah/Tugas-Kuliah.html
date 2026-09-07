@@ -1360,8 +1360,8 @@ Ammar Rabbaniyyin_M0401241066</p>
 ## 4 72.71 72.94
 ## 5 71.29 71.63
 ## 6 70.01 70.24</code></pre>
-<p>Data yang digunakan adalah data IPM dari provinsi Aceh denga dengan
-periode 2010-2021.</p>
+<p>Data yang digunakan adalah data IPM dari provinsi Aceh dengan periode
+2010-2021.</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>data_aceh <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(Provinsi <span class="sc">==</span> <span class="st">&quot;ACEH&quot;</span>) <span class="sc">%&gt;%</span></span>
 <span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="fu">pivot_longer</span> (</span>
