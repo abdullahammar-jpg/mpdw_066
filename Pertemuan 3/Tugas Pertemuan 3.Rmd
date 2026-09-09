@@ -1,8 +1,8 @@
 ---
-title: "Tugas Pertemuan 3"
+title: "Regresi dengan Peubah Lag"
 author: "Abdullah' Ammar Rabbaniyyin_M0401241066"
 date: "2026-09-09"
-output: html_document
+output: rmdformats::readthedown
 ---
 
 ```{r setup, include=FALSE}
@@ -12,33 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 # Library
 
 ```{r}
-library(dplyr)
 library(dLagM)
 library(dynlm)
-library(forecast)
-library(Metrics)
+library(MLmetrics)
+library(lmtest)
+library(car)
+library(ggplot2)
 ```
 
 # Data
 
 ```{r}
-df <- read.csv("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\NewDelhi_Air_quality.csv")
-head(df)
-```
-
-```{r}
-library(dplyr)
-
-data <- df %>%
-  mutate(
-    t = row_number(),
-    Yt = AQI,
-    Yt_1 = lag(AQI, 1),
-    Xt = CO
-  ) %>%
-  select(t, Yt, Yt_1, Xt)
-
-head(data, 10)
+data <- read.csv("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\NewDelhi_Air_quality.csv")
+head(data)
 ```
 
 # Eksplorasi Data
@@ -50,10 +36,12 @@ str(data)
 ```{r}
 dim(data)
 ```
+Data memiliki 72 baris dan 12 kolom.
 
 ```{r}
 colSums(is.na(data))
 ```
+Tidak terdapat missing value pada data.
 
 # Split
 
@@ -72,17 +60,236 @@ test.ts  <- ts(test)
 data.ts <- ts(data)
 ```
 
+Data dibagi menjadi dua bagian, yaitu 80% data training dan 20% data testing. Data training digunakan untuk membangun model, sedangkan data testing digunakan untuk menguji kemampuan model dalam melakukan peramalan pada data yang belum digunakan saat pemodelan. Training sebanyak 57 dan Testing sebanyak 15.
+
 # Model Koyck
 
-```{r}
+Model Koyck digunakan untuk melihat pengaruh PM2.5 saat ini dan AQI periode sebelumnya terhadap AQI saat ini.
+Secara umum:
+$$
+Y_t = \alpha + \beta X_t + \lambda Y_{t-1} + \epsilon_t
+$$
+Dengan: <br>
+- $Y_t$ = AQI saat ini <br>
+- $X_t$ = PM2.5 saat ini <br>
+- $Y_{t-1}$ = AQI periode sebelumnya 
 
+## Pemodelan
+
+```{r}
+model.koyck <- koyckDlm(x = train$pm25, y = train$AQI)
+summary(model.koyck)
+```
+```{r}
+AIC(model.koyck)
+```
+```{r}
+BIC(model.koyck)
 ```
 
-# Split Data
+Dari hasil tersebut, didapat bahwa peubah $x_t$ dan $y_{t-1}$ signifikan pada taraf 5% dengan $p-value < 0.05$. Hal ini menunjukkan bahwa PM2.5 pada periode saat ini dan AQI pada satu periode sebelumnya berpengaruh signifikan terhadap AQI pada periode saat ini. Model keseluruhannya sebagai berikut: 
+
+$$
+\hat{Y}_t = 4.54910 - 0.56825X_t + 0.87326Y_{t-1}
+$$
+
+## Peramalan dan Akurasi
 
 ```{r}
-
+fore.koyck <- dLagM::forecast(model = model.koyck, x = test$pm25, h = 15)
+fore.koyck
+```
+```{r}
+# Akurasi Data Test
+mape.koyck <- MLmetrics::MAPE(fore.koyck$forecasts, test$AQI)
+mape.koyck
+```
+```{r}
+GoF(model.koyck)
 ```
 
+Model Koyck memiliki rata-rata kesalahan absolut relatif sekitar 13.95% pada data testing.
+Artinya, secara rata-rata hasil peramalan AQI dari model Koyck memiliki penyimpangan sekitar 13.95% dari nilai aktualnya. Model sudah cukup baik.
 
+# Regression with Distributed Lag
 
+Model ini digunakan untuk melihat bagaimana pengaruh suatu variabel independen ($X$) terhadap variabel dependen ($Y$) tidak hanya terjadi pada periode saat ini ($t$), tetapi juga merembet atau tertunda pada periode-periode sebelumnya (menggunakan lag hingga orde $q$).
+Model secara umum:
+$$
+Y_t = \alpha + \beta_0 X_t + \beta_1 X_{t-1} + \beta_2 X_{t-2} + \cdots + \beta_q X_{t-q} + \varepsilon_t
+$$
+Dengan: <br>
+- $Y_t$ = variabel dependen pada periode $t$ <br>
+- $X_t$ = variabel independen pada periode sekarang <br>
+- $X_{t-1}$ = $X$ satu periode sebelumnya <br>
+- $X_{t-2}$ = $X$ dua periode sebelumnya <br>
+- $X_{t-q}$ = $X$ sampai lag ke-$q$ <br>
+- $\beta_0$ = pengaruh langsung $X$ terhadap $Y$ <br>
+- $\beta_1, \ldots, \beta_q$ = pengaruh tertunda (lagged effect) $X$ terhadap $Y$ <br>
+- $\varepsilon_t$ = error
+
+## Lag Optimum
+
+Pemilihan lag dilakukan berdasarkan kriteria AIC, sehingga model dengan nilai AIC yang lebih kecil lebih dipertimbangkan sebagai model yang lebih baik.
+
+```{r}
+#penentuan lag optimum 
+auto.dlm <- finiteDLMauto(formula = AQI ~ pm25,
+              data = data.frame(train), q.min = 1, q.max = 15,
+              model.type = "dlm", error.type = "AIC", trace = TRUE)
+auto.dlm
+```
+
+Berdasarkan output tersebut, lag optimum didapatkan ketika lag=15. Selanjutnya dilakukan pemodelan untuk lag=15.
+
+## Pemodelan
+
+```{r}
+#model dlm dengan lag optimum
+model.dlm2 <- dlm(x = train$pm25,y = train$AQI , q = 15)
+summary(model.dlm2)
+```
+
+Dari hasil tersebut terdapat peubah yang berpengaruh signifikan terhadap taraf nyata 5% yaitu $x_t$. Hal ini menunjukkan bahwa nilai $x$ pada periode saat ini berpengaruh signifikan terhadap nilai $y$ pada periode saat ini. Adapun keseluruhan model yang terbentuk adalah
+
+$$
+\hat{Y}_t = 51.5690-19.2819X_t + 5.7764X_{t-1} + 1.1007X_{t-2} + ... - 2.0430X_{t-15}
+$$
+
+## Peramalan dan Akurasi
+
+```{r}
+fore.dlm2 <- dLagM::forecast(model = model.dlm2, x = test$pm25, h = 15)
+fore.dlm2
+```
+```{r}
+# akurasi data test
+mape.dlm2<- MAPE(fore.dlm2$forecasts, test$AQI)
+mape.dlm2
+```
+```{r}
+# akurasi data training
+GoF(model.dlm2)
+```
+
+Model DLM memiliki rata-rata kesalahan absolut relatif sekitar 23.52% pada data testing.
+Artinya, secara rata-rata hasil peramalan AQI dari model DLM memiliki penyimpangan sekitar 23.52% dari nilai aktualnya. Model tidak sebaik Koyck.
+
+# Model Autoregressive
+
+ARDL (Autoregressive Distributed Lag) menggabungkan lag dari variabel dependen (autoregressive) dan lag dari variabel independen (distributed lag) dalam satu persamaan untuk menganalisis hubungan jangka pendek dan jangka panjang antarvariabel.
+Secara umum:
+$$
+Y_t = \alpha + \phi_1 Y_{t-1} + \cdots + \phi_p Y_{t-p} + \beta_0 X_t + \cdots + \beta_q X_{t-q} + \varepsilon_t
+$$
+Dengan: <br>
+$Y_t$= variabel dependen pada periode <br>
+$X_t$ = variabel independen pada periode <br>
+$Y_{t-i}$ = nilai $Y$ pada periode sebelumnya hingga lag ke-$p$ <br>
+$X_{t-j}$ = nilai $X$ pada periode sebelumnya hingga lag ke-$q$ <br>
+$\alpha$ = konstanta/intersep <br>
+$\phi_i$ = koefisien lag dari variabel dependen $Y$ <br>
+$\beta_j$ = koefisien variabel independen $X$ dan lag-nya <br>
+$p$ = maksimum lag untuk variabel dependen $Y$ <br>
+$q$ = maksimum lag untuk variabel independen $X$ <br>
+$\varepsilon_t$ = error pada periode t
+
+## Lag Optimum
+
+```{r}
+#penentuan lag optimum
+model.ardl.opt <- ardlBoundOrders(data = data.frame(data), ic = "AIC", 
+                                  formula = AQI ~ pm25 )
+model.ardl.opt
+```
+
+```{r}
+min_p=c()
+for(i in 1:6){
+  min_p[i]=min(model.ardl.opt$Stat.table[[i]])
+}
+q_opt=which(min_p==min(min_p, na.rm = TRUE))
+p_opt=which(model.ardl.opt$Stat.table[[q_opt]] == 
+              min(model.ardl.opt$Stat.table[[q_opt]], na.rm = TRUE))
+data.frame("q_optimum" = q_opt, "p_optimum" = p_opt, 
+           "AIC"=model.ardl.opt$min.Stat)
+```
+Didapat q optimum sebesar 5 dan p optimum sebesar 15 dengan AIC = 124.47089 
+
+## Pemodelan
+
+```{r}
+model.ardl <- ardlDlm(
+  formula = AQI ~ pm25,
+  data = train,
+  p = 15,
+  q = 5
+)
+summary(model.ardl)
+```
+```{r}
+AIC(model.ardl)
+```
+```{r}
+BIC(model.ardl)
+```
+
+Berdasarkan uji parsial pada taraf 5%, peubah yang berpengaruh signifikan terhadap AQI adalah $x_t$, $y_{t-1}$, dan $y_{t-2}$. Hal ini menunjukkan bahwa PM2.5 pada periode saat ini serta AQI pada satu dan dua periode sebelumnya berpengaruh signifikan terhadap AQI saat ini. Model keseluruhan dapat dilihat sebagai berikut:
+
+$$
+\hat{Y}_t = 6.39323 - 9.79936X_t + 12.55109X_{t-1} + ...- 0.33394Y_{t-5}
+$$
+
+## Peramalan dan Akurasi
+
+```{r}
+fore.ardl <- dLagM:::forecast.ardlDlm(model.ardl, x=test$pm25, h=15)
+fore.ardl
+```
+```{r}
+# akurasi data tes
+mape.ardl <- MAPE(fore.ardl$forecasts, test$AQI)
+mape.ardl
+```
+```{r}
+#akurasi data training
+GoF(model.ardl)
+```
+
+Model ARDL memiliki rata-rata kesalahan absolut relatif sekitar 28.14% pada data testing.
+Artinya, secara rata-rata hasil peramalan AQI dari model ARDL memiliki penyimpangan sekitar 28.14% dari nilai aktualnya. Model tidak sebaik Koyck maupun DLM.
+
+# Perbandingan
+
+```{r}
+akurasi <- matrix(c(mape.koyck, mape.dlm2, mape.ardl))
+row.names(akurasi)<- c("Koyck","DLM 2","Autoregressive")
+colnames(akurasi) <- c("MAPE")
+akurasi
+```
+
+Berdasarkan hasil evaluasi menggunakan MAPE pada data testing, model Koyck menghasilkan nilai MAPE sebesar 13.95%, model DLM sebesar 23.53%, dan model ARDL sebesar 28.15%. Dengan demikian, model Koyck memiliki kemampuan peramalan terbaik karena menghasilkan nilai kesalahan paling kecil. Sementara itu, model ARDL menghasilkan nilai MAPE terbesar sehingga memiliki kemampuan peramalan paling rendah dibandingkan kedua model lainnya.
+
+# Plot
+
+```{r}
+ylim_all <- range(c(
+  test$AQI,
+  fore.koyck$forecasts,
+  fore.dlm2$forecasts,
+  fore.ardl$forecasts
+), na.rm = TRUE)
+
+plot(test$AQI,
+     type = "b",
+     col = "black",
+     ylim = ylim_all,
+     xlab = "Periode",
+     ylab = "AQI")
+
+lines(fore.koyck$forecasts, col = "blue", lwd = 2)
+lines(fore.dlm2$forecasts, col = "orange", lwd = 2)
+lines(fore.ardl$forecasts, col = "green", lwd = 2)
+```
+
+Secara visual, hasil peramalan model Koyck cenderung lebih mendekati pola AQI aktual dibandingkan model DLM dan ARDL. Hal tersebut konsisten dengan nilai MAPE, dimana model Koyck menghasilkan kesalahan peramalan paling kecil.
