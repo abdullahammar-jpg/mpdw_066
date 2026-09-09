@@ -1,0 +1,88 @@
+---
+title: "Tugas Pertemuan 3"
+author: "Abdullah' Ammar Rabbaniyyin_M0401241066"
+date: "2026-09-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Library
+
+```{r}
+library(dplyr)
+library(dLagM)
+library(dynlm)
+library(forecast)
+library(Metrics)
+```
+
+# Data
+
+```{r}
+df <- read.csv("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\NewDelhi_Air_quality.csv")
+head(df)
+```
+
+```{r}
+library(dplyr)
+
+data <- df %>%
+  mutate(
+    t = row_number(),
+    Yt = AQI,
+    Yt_1 = lag(AQI, 1),
+    Xt = CO
+  ) %>%
+  select(t, Yt, Yt_1, Xt)
+
+head(data, 10)
+```
+
+# Eksplorasi Data
+
+```{r}
+str(data)
+```
+
+```{r}
+dim(data)
+```
+
+```{r}
+colSums(is.na(data))
+```
+
+# Split
+
+```{r}
+n <- nrow(data)
+
+n_train <- floor(0.8 * n)
+
+# bagi data
+train <- data[1:n_train, ]
+test  <- data[(n_train+1):n, ]
+
+# ubah ke time series
+train.ts <- ts(train)
+test.ts  <- ts(test)
+data.ts <- ts(data)
+```
+
+# Model Koyck
+
+```{r}
+
+```
+
+# Split Data
+
+```{r}
+
+```
+
+
+
