@@ -1637,7 +1637,7 @@ independen <span class="math inline">\(X\)</span> <br> <span class="math inline"
 <div id="lag-optimum-1" class="section level2">
 <h2>Lag Optimum</h2>
 <div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" tabindex="-1"></a><span class="co">#penentuan lag optimum</span></span>
-<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a>model.ardl.opt <span class="ot">&lt;-</span> <span class="fu">ardlBoundOrders</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(data), <span class="at">ic =</span> <span class="st">&quot;AIC&quot;</span>, </span>
+<span id="cb46-2"><a href="#cb46-2" tabindex="-1"></a>model.ardl.opt <span class="ot">&lt;-</span> <span class="fu">ardlBoundOrders</span>(<span class="at">data =</span> <span class="fu">data.frame</span>(train), <span class="at">ic =</span> <span class="st">&quot;AIC&quot;</span>, </span>
 <span id="cb46-3"><a href="#cb46-3" tabindex="-1"></a>                                  <span class="at">formula =</span> AQI <span class="sc">~</span> pm25 )</span>
 <span id="cb46-4"><a href="#cb46-4" tabindex="-1"></a>model.ardl.opt</span></code></pre></div>
 <pre><code>## $p
@@ -1645,67 +1645,91 @@ independen <span class="math inline">\(X\)</span> <br> <span class="math inline"
 ## 1   15
 ## 
 ## $q
-## [1] 5
+## [1] 15
 ## 
 ## $Stat.table
-##           q = 1    q = 2    q = 3    q = 4    q = 5    q = 6    q = 7    q = 8
-## p = 1  175.6638 173.4300 169.4588 153.4179 153.0743 151.1206 144.9328 145.9197
-## p = 2  173.3465 173.4835 170.1115 155.4157 151.3281 145.4609 142.2415 143.1635
-## p = 3  170.6630 170.6630 172.0632 157.3058 152.4389 143.5828 142.5900 143.5356
-## p = 4  153.4709 155.4432 155.4432 154.6363 149.6701 143.3774 144.5209 145.4322
-## p = 5  147.2972 149.2970 151.2887 151.2887 151.4674 144.9280 145.9614 145.3283
-## p = 6  137.8965 139.8447 141.7903 143.1942 143.1942 144.0834 144.8809 142.7234
-## p = 7  148.4421 148.5238 148.1127 146.0607 143.4367 143.4367 145.4223 143.8002
-## p = 8  140.5719 141.0397 141.8280 141.9797 140.7112 141.2079 141.2079 143.0516
-## p = 9  146.2825 142.3373 141.1879 140.7472 139.5962 141.0394 142.4976 142.4976
-## p = 10 150.4402 144.7181 142.6828 141.9912 139.6346 141.4725 142.6619 144.6327
-## p = 11 148.7483 142.8007 139.5594 139.2561 130.4437 132.4436 133.3735 135.3613
-## p = 12 145.6517 138.8176 135.5105 134.9701 127.4923 128.8063 129.3052 131.2456
-## p = 13 147.6700 138.8567 136.2592 137.1445 131.6268 133.5459 134.9739 136.9144
-## p = 14 147.9332 139.5295 135.8578 136.4160 132.8957 134.8866 136.5186 138.3974
-## p = 15 145.2797 135.1519 132.2959 133.0945 124.7089 126.7065 128.6573 130.6374
-##           q = 9   q = 10   q = 11   q = 12   q = 13   q = 14   q = 15
-## p = 1  146.1822 145.1524 141.7981 141.7971 136.3636 134.9485 133.7805
-## p = 2  142.4039 143.1442 140.0579 137.3658 134.7689 135.3957 134.3190
-## p = 3  143.3060 143.9315 140.8152 138.0758 136.6450 137.0960 136.2864
-## p = 4  145.1476 145.8591 142.5665 140.0567 138.5906 139.0671 138.2374
-## p = 5  143.3443 143.3033 138.7263 138.5509 138.2344 138.2887 136.5913
-## p = 6  143.7239 144.6324 140.0156 139.9542 140.1107 140.2790 138.5596
-## p = 7  144.9764 145.8288 139.9750 138.0631 137.1651 135.0759 135.5428
-## p = 8  144.3615 144.4638 140.6567 133.8244 132.9980 132.6996 132.4038
-## p = 9  144.3583 144.6840 138.0590 135.8007 134.6425 134.2178 134.2594
-## p = 10 144.6327 146.5713 139.5722 137.7714 136.3764 136.1647 136.2013
-## p = 11 136.1546 136.1546 136.7182 135.6091 133.8928 133.6618 134.8254
-## p = 12 132.3942 134.3067 134.3067 135.1873 133.4581 134.0468 133.2658
-## p = 13 136.7088 137.5455 136.5324 136.5324 135.2556 135.7380 135.2432
-## p = 14 137.0029 136.2761 133.5555 135.2334 135.2334 137.1634 136.2598
-## p = 15 132.0212 132.1933 129.1212 131.1030 131.3276 131.3276 133.0357
+##            q = 1     q = 2     q = 3     q = 4     q = 5     q = 6     q = 7
+## p = 1  140.96343 138.54505 132.99479 123.55712 123.90746 121.40329 114.20470
+## p = 2  138.30775 138.82888 133.62202 125.54055 122.61537 113.66417 110.25671
+## p = 3  134.13415 134.13415 135.57031 127.54040 123.92956 109.44506 108.85286
+## p = 4  118.62364 120.57981 120.57981 122.23541 118.24755 108.18873 107.94733
+## p = 5  114.71656 116.67961 117.27554 117.27554 118.92580 107.57522 107.98734
+## p = 6  105.13284 107.11324 106.83109 108.05850 108.05850 108.76605 109.57530
+## p = 7  113.19250 114.39875 111.17772 109.69456 107.88697 107.88697 109.84485
+## p = 8   99.79025 101.61094 101.74121 100.88003  99.95660 100.94338 100.94338
+## p = 9   88.49074  87.80524  87.86929  87.07306  84.78252  85.59977  87.48566
+## p = 10  86.43195  87.60610  79.65714  80.53203  75.84789  77.48558  79.48413
+## p = 11  99.27857  99.31693  92.92575  89.35067  80.26855  81.79503  83.18196
+## p = 12 108.14062 103.51519  96.04352  93.91544  85.18422  86.33714  87.72503
+## p = 13 109.41507 103.52229  97.67071  96.32837  84.85661  86.34649  87.75378
+## p = 14 110.00106  99.71683  90.89914  88.67776  80.05991  81.35374  82.29160
+## p = 15 105.27088 102.33304  93.63709  90.76521  76.56629  78.21673  79.71004
+##            q = 8     q = 9    q = 10    q = 11    q = 12    q = 13    q = 14
+## p = 1  114.80886 115.64636 112.72216 110.41750 107.81635 101.64925 102.38914
+## p = 2  110.14509 109.79120 110.10406 106.63492  96.60230  96.08167  94.63556
+## p = 3  109.20134 109.47553 108.92528 105.24575  92.56052  94.12554  94.29542
+## p = 4  108.22520 108.75388 108.92572 107.16073  93.37342  95.07484  95.97208
+## p = 5  103.26125 101.39410 101.10826  95.87093  87.21504  87.01273  88.31178
+## p = 6  103.66223 101.94872  99.21396  94.78001  78.08871  73.27211  71.86812
+## p = 7  105.11176 102.48079  96.50323  92.27520  79.50622  73.57054  70.44913
+## p = 8  102.41321  98.42151  95.19426  92.91922  80.21984  71.48090  70.36811
+## p = 9   87.48566  88.36519  79.51468  78.93501  78.20636  73.45340  72.11225
+## p = 10  79.62153  79.62153  81.49450  80.77921  80.13557  75.00996  73.76570
+## p = 11  81.80315  81.98892  81.98892  82.01082  81.60699  76.34906  69.90165
+## p = 12  84.43373  82.29121  83.09421  83.09421  80.77141  75.20715  69.42366
+## p = 13  83.75021  82.90930  84.84889  83.00204  83.00204  76.18047  65.30612
+## p = 14  79.15810  74.31320  76.30929  71.90703  73.73493  73.73493  67.11178
+## p = 15  71.16979  61.35428  58.67383  54.61943  55.55869  54.32641  54.32641
+##          q = 15
+## p = 1  98.88454
+## p = 2  92.20168
+## p = 3  88.90993
+## p = 4  90.88714
+## p = 5  88.20222
+## p = 6  74.14324
+## p = 7  71.14269
+## p = 8  71.98584
+## p = 9  73.94256
+## p = 10 74.62778
+## p = 11 72.56672
+## p = 12 62.57944
+## p = 13 56.90483
+## p = 14 55.15744
+## p = 15 55.83027
 ## 
 ## $min.Stat
-## [1] 124.7089</code></pre>
-<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a>min_p<span class="ot">=</span><span class="fu">c</span>()</span>
-<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>){</span>
-<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a>  min_p[i]<span class="ot">=</span><span class="fu">min</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[i]])</span>
-<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a>}</span>
-<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a>q_opt<span class="ot">=</span><span class="fu">which</span>(min_p<span class="sc">==</span><span class="fu">min</span>(min_p, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a>p_opt<span class="ot">=</span><span class="fu">which</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[q_opt]] <span class="sc">==</span> </span>
-<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a>              <span class="fu">min</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[q_opt]], <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a><span class="fu">data.frame</span>(<span class="st">&quot;q_optimum&quot;</span> <span class="ot">=</span> q_opt, <span class="st">&quot;p_optimum&quot;</span> <span class="ot">=</span> p_opt, </span>
-<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a>           <span class="st">&quot;AIC&quot;</span><span class="ot">=</span>model.ardl.opt<span class="sc">$</span>min.Stat)</span></code></pre></div>
+## [1] 54.32641</code></pre>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" tabindex="-1"></a>min_p <span class="ot">=</span> <span class="fu">c</span>()</span>
+<span id="cb48-2"><a href="#cb48-2" tabindex="-1"></a></span>
+<span id="cb48-3"><a href="#cb48-3" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>){</span>
+<span id="cb48-4"><a href="#cb48-4" tabindex="-1"></a>  min_p[i] <span class="ot">=</span> <span class="fu">min</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[i]])</span>
+<span id="cb48-5"><a href="#cb48-5" tabindex="-1"></a>}</span>
+<span id="cb48-6"><a href="#cb48-6" tabindex="-1"></a></span>
+<span id="cb48-7"><a href="#cb48-7" tabindex="-1"></a>q_opt <span class="ot">=</span> <span class="fu">which</span>(min_p <span class="sc">==</span> <span class="fu">min</span>(min_p, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb48-8"><a href="#cb48-8" tabindex="-1"></a>p_opt <span class="ot">=</span> <span class="fu">sapply</span>(q_opt, <span class="cf">function</span>(q){</span>
+<span id="cb48-9"><a href="#cb48-9" tabindex="-1"></a>  <span class="fu">which</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[q]] <span class="sc">==</span></span>
+<span id="cb48-10"><a href="#cb48-10" tabindex="-1"></a>          <span class="fu">min</span>(model.ardl.opt<span class="sc">$</span>Stat.table[[q]], <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb48-11"><a href="#cb48-11" tabindex="-1"></a>})</span>
+<span id="cb48-12"><a href="#cb48-12" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb48-13"><a href="#cb48-13" tabindex="-1"></a>  <span class="at">q_optimum =</span> q_opt,</span>
+<span id="cb48-14"><a href="#cb48-14" tabindex="-1"></a>  <span class="at">p_optimum =</span> p_opt,</span>
+<span id="cb48-15"><a href="#cb48-15" tabindex="-1"></a>  <span class="at">AIC =</span> model.ardl.opt<span class="sc">$</span>min.Stat</span>
+<span id="cb48-16"><a href="#cb48-16" tabindex="-1"></a>)</span></code></pre></div>
 <pre><code>##   q_optimum p_optimum      AIC
-## 1         5        15 124.7089</code></pre>
-<p>Didapat q optimum sebesar 5 dan p optimum sebesar 15 dengan AIC =
-124.47089</p>
+## 1        13        15 54.32641
+## 2        14        15 54.32641</code></pre>
+<p>Didapat q optimum sebesar 13/14 dan p optimum sebesar 15 dengan AIC =
+54.32641</p>
 </div>
 <div id="pemodelan-2" class="section level2">
 <h2>Pemodelan</h2>
-<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a>model.ardl <span class="ot">&lt;-</span> <span class="fu">ardlDlm</span>(</span>
+<div class="sourceCode" id="cb50"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" tabindex="-1"></a>model.ardl1 <span class="ot">&lt;-</span> <span class="fu">ardlDlm</span>(</span>
 <span id="cb50-2"><a href="#cb50-2" tabindex="-1"></a>  <span class="at">formula =</span> AQI <span class="sc">~</span> pm25,</span>
 <span id="cb50-3"><a href="#cb50-3" tabindex="-1"></a>  <span class="at">data =</span> train,</span>
 <span id="cb50-4"><a href="#cb50-4" tabindex="-1"></a>  <span class="at">p =</span> <span class="dv">15</span>,</span>
-<span id="cb50-5"><a href="#cb50-5" tabindex="-1"></a>  <span class="at">q =</span> <span class="dv">5</span></span>
+<span id="cb50-5"><a href="#cb50-5" tabindex="-1"></a>  <span class="at">q =</span> <span class="dv">13</span></span>
 <span id="cb50-6"><a href="#cb50-6" tabindex="-1"></a>)</span>
-<span id="cb50-7"><a href="#cb50-7" tabindex="-1"></a><span class="fu">summary</span>(model.ardl)</span></code></pre></div>
+<span id="cb50-7"><a href="#cb50-7" tabindex="-1"></a><span class="fu">summary</span>(model.ardl1)</span></code></pre></div>
 <pre><code>## 
 ## Time series regression with &quot;ts&quot; data:
 ## Start = 16, End = 57
@@ -1715,122 +1739,174 @@ independen <span class="math inline">\(X\)</span> <br> <span class="math inline"
 ## 
 ## Residuals:
 ##      Min       1Q   Median       3Q      Max 
-## -0.82795 -0.21807 -0.06184  0.19832  0.95292 
+## -0.64838 -0.13502  0.00481  0.17134  0.86764 
 ## 
 ## Coefficients:
-##             Estimate Std. Error t value Pr(&gt;|t|)  
-## (Intercept)  6.39323    8.42066   0.759   0.4566  
-## pm25.t      -9.79936    3.63098  -2.699   0.0138 *
-## pm25.1      12.55109    7.60359   1.651   0.1144  
-## pm25.2       2.80197    9.55656   0.293   0.7724  
-## pm25.3      -0.03494   10.20593  -0.003   0.9973  
-## pm25.4      -8.75652   10.57855  -0.828   0.4176  
-## pm25.5       7.05101   10.68081   0.660   0.5167  
-## pm25.6      -4.23104   10.02790  -0.422   0.6776  
-## pm25.7      -2.27689    9.98750  -0.228   0.8220  
-## pm25.8      -0.02309    9.52703  -0.002   0.9981  
-## pm25.9       1.79410    8.66257   0.207   0.8380  
-## pm25.10      0.55336    7.76096   0.071   0.9439  
-## pm25.11     -1.03757    6.05781  -0.171   0.8657  
-## pm25.12      1.60399    3.91378   0.410   0.6863  
-## pm25.13     -0.35479    2.86667  -0.124   0.9027  
-## pm25.14     -1.91046    2.85174  -0.670   0.5106  
-## pm25.15      1.61309    1.52639   1.057   0.3032  
-## AQI.1        0.57609    0.23251   2.478   0.0223 *
-## AQI.2        0.58447    0.26711   2.188   0.0407 *
-## AQI.3        0.18559    0.26449   0.702   0.4910  
-## AQI.4       -0.21285    0.26613  -0.800   0.4332  
-## AQI.5       -0.33394    0.21453  -1.557   0.1353  
+##             Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept) 24.87968   22.66122   1.098    0.294
+## pm25.t      -7.11241    4.25697  -1.671    0.121
+## pm25.1       3.47789    8.53544   0.407    0.691
+## pm25.2       8.90362    9.66141   0.922    0.375
+## pm25.3      -1.07959   10.05701  -0.107    0.916
+## pm25.4      -6.86960    9.90485  -0.694    0.501
+## pm25.5       6.87988   10.75069   0.640    0.534
+## pm25.6      -0.37136    9.80263  -0.038    0.970
+## pm25.7      -6.23839   10.18498  -0.613    0.552
+## pm25.8      -5.20919   10.03437  -0.519    0.613
+## pm25.9       6.03514    8.92242   0.676    0.512
+## pm25.10     -0.98745    8.01662  -0.123    0.904
+## pm25.11     -3.96468    6.60644  -0.600    0.560
+## pm25.12      5.00228    4.51517   1.108    0.290
+## pm25.13     -0.81745    2.82640  -0.289    0.777
+## pm25.14     -2.72188    2.80293  -0.971    0.351
+## pm25.15      1.92192    1.48600   1.293    0.220
+## AQI.1        0.27216    0.26797   1.016    0.330
+## AQI.2        0.36118    0.30578   1.181    0.260
+## AQI.3        0.26293    0.29912   0.879    0.397
+## AQI.4       -0.07305    0.29697  -0.246    0.810
+## AQI.5        0.16026    0.27687   0.579    0.573
+## AQI.6       -0.28049    0.27217  -1.031    0.323
+## AQI.7       -0.10846    0.27293  -0.397    0.698
+## AQI.8        0.11137    0.26048   0.428    0.677
+## AQI.9       -0.18961    0.26130  -0.726    0.482
+## AQI.10      -0.30069    0.26231  -1.146    0.274
+## AQI.11      -0.08653    0.29598  -0.292    0.775
+## AQI.12       0.34988    0.29726   1.177    0.262
+## AQI.13      -0.15758    0.26881  -0.586    0.569
+## 
+## Residual standard error: 0.5589 on 12 degrees of freedom
+## Multiple R-squared:  0.9799, Adjusted R-squared:  0.9313 
+## F-statistic: 20.17 on 29 and 12 DF,  p-value: 1.696e-06</code></pre>
+<p>Model terlalu kompleks, tidak ada peubah yang signifikan. Mencari
+alternatif</p>
+<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a>model.ardl <span class="ot">&lt;-</span> <span class="fu">ardlDlm</span>(</span>
+<span id="cb52-2"><a href="#cb52-2" tabindex="-1"></a>  <span class="at">formula =</span> AQI <span class="sc">~</span> pm25,</span>
+<span id="cb52-3"><a href="#cb52-3" tabindex="-1"></a>  <span class="at">data =</span> train,</span>
+<span id="cb52-4"><a href="#cb52-4" tabindex="-1"></a>  <span class="at">p =</span> <span class="dv">10</span>,</span>
+<span id="cb52-5"><a href="#cb52-5" tabindex="-1"></a>  <span class="at">q =</span> <span class="dv">5</span></span>
+<span id="cb52-6"><a href="#cb52-6" tabindex="-1"></a>)</span>
+<span id="cb52-7"><a href="#cb52-7" tabindex="-1"></a><span class="fu">summary</span>(model.ardl)</span></code></pre></div>
+<pre><code>## 
+## Time series regression with &quot;ts&quot; data:
+## Start = 11, End = 57
+## 
+## Call:
+## dynlm(formula = as.formula(model.text), data = data)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -0.81654 -0.26572 -0.05465  0.31496  1.13760 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 13.00310    3.00724   4.324 0.000156 ***
+## pm25.t      -8.16270    2.81553  -2.899 0.006934 ** 
+## pm25.1       8.44147    5.50194   1.534 0.135443    
+## pm25.2       1.15137    6.55648   0.176 0.861781    
+## pm25.3       1.61045    6.34644   0.254 0.801415    
+## pm25.4      -6.54487    6.12607  -1.068 0.293878    
+## pm25.5       3.43751    6.11516   0.562 0.578204    
+## pm25.6       1.85719    5.26252   0.353 0.726624    
+## pm25.7      -6.76534    3.15417  -2.145 0.040179 *  
+## pm25.8       2.39986    1.86594   1.286 0.208232    
+## pm25.9       2.53522    1.84632   1.373 0.179892    
+## pm25.10     -2.16776    0.89161  -2.431 0.021231 *  
+## AQI.1        0.65361    0.16976   3.850 0.000575 ***
+## AQI.2        0.34356    0.21146   1.625 0.114696    
+## AQI.3        0.08807    0.20594   0.428 0.671958    
+## AQI.4       -0.08596    0.20837  -0.413 0.682892    
+## AQI.5       -0.31219    0.15410  -2.026 0.051753 .  
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 0.608 on 20 degrees of freedom
-## Multiple R-squared:  0.9604, Adjusted R-squared:  0.9187 
-## F-statistic: 23.07 on 21 and 20 DF,  p-value: 8.9e-10</code></pre>
-<div class="sourceCode" id="cb52"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" tabindex="-1"></a><span class="fu">AIC</span>(model.ardl)</span></code></pre></div>
-<pre><code>## [1] 92.22958</code></pre>
-<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a><span class="fu">BIC</span>(model.ardl)</span></code></pre></div>
-<pre><code>## [1] 132.196</code></pre>
+## Residual standard error: 0.5655 on 30 degrees of freedom
+## Multiple R-squared:  0.952,  Adjusted R-squared:  0.9264 
+## F-statistic: 37.16 on 16 and 30 DF,  p-value: 2.064e-15</code></pre>
+<div class="sourceCode" id="cb54"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" tabindex="-1"></a><span class="fu">AIC</span>(model.ardl)</span></code></pre></div>
+<pre><code>## [1] 94.69716</code></pre>
+<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" tabindex="-1"></a><span class="fu">BIC</span>(model.ardl)</span></code></pre></div>
+<pre><code>## [1] 127.9998</code></pre>
 <p>Berdasarkan uji parsial pada taraf 5%, peubah yang berpengaruh
 signifikan terhadap AQI adalah <span class="math inline">\(x_t\)</span>,
-<span class="math inline">\(y_{t-1}\)</span>, dan <span class="math inline">\(y_{t-2}\)</span>. Hal ini menunjukkan bahwa PM2.5
-pada periode saat ini serta AQI pada satu dan dua periode sebelumnya
-berpengaruh signifikan terhadap AQI saat ini. Model keseluruhan dapat
-dilihat sebagai berikut:</p>
+<span class="math inline">\(x_{t-7}\)</span>, <span class="math inline">\(x_{t-10}\)</span>, dan <span class="math inline">\(y_{t-1}\)</span>, serta <span class="math inline">\(y_{t-5}\)</span> pada taraf 10%. Hal ini
+menunjukkan bahwa PM2.5 saat ini, PM2.5 tujuh dan sepuluh periode
+sebelumnya, serta AQI satu periode sebelumnya berpengaruh signifikan
+terhadap AQI saat ini. Selain itu, AQI lima periode sebelumnya <span class="math inline">\(y_{t-5}\)</span> juga berpengaruh signifikan pada
+taraf 10%.. Model keseluruhan dapat dilihat sebagai berikut:</p>
 <p><span class="math display">\[
-\hat{Y}_t = 6.39323 - 9.79936X_t + 12.55109X_{t-1} + ...- 0.33394Y_{t-5}
+\hat{Y}_t = 13.00310 - 8.16270X_t + ... - 0.31219Y_{t-5}
 \]</span></p>
 </div>
 <div id="peramalan-dan-akurasi-2" class="section level2">
 <h2>Peramalan dan Akurasi</h2>
-<div class="sourceCode" id="cb56"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" tabindex="-1"></a>fore.ardl <span class="ot">&lt;-</span> dLagM<span class="sc">:::</span><span class="fu">forecast.ardlDlm</span>(model.ardl, <span class="at">x=</span>test<span class="sc">$</span>pm25, <span class="at">h=</span><span class="dv">15</span>)</span>
-<span id="cb56-2"><a href="#cb56-2" tabindex="-1"></a>fore.ardl</span></code></pre></div>
+<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" tabindex="-1"></a>fore.ardl <span class="ot">&lt;-</span> dLagM<span class="sc">:::</span><span class="fu">forecast.ardlDlm</span>(model.ardl, <span class="at">x=</span>test<span class="sc">$</span>pm25, <span class="at">h=</span><span class="dv">15</span>)</span>
+<span id="cb58-2"><a href="#cb58-2" tabindex="-1"></a>fore.ardl</span></code></pre></div>
 <pre><code>## $forecasts
-##  [1] 22.44049 22.42039 22.62635 24.56762 25.92473 28.96350 31.03444 32.74395
-##  [9] 32.28459 31.79421 30.18572 28.42222 26.14814 24.40399 23.41655
+##  [1] 22.41778 21.22156 20.68161 21.00496 20.86753 22.52107 23.97627 25.02437
+##  [9] 25.19905 25.01570 24.65240 23.92171 22.42729 21.48525 21.19786
 ## 
 ## $call
 ## dLagM:::forecast.ardlDlm(model = model.ardl, x = test$pm25, h = 15)
 ## 
 ## attr(,&quot;class&quot;)
 ## [1] &quot;forecast.ardlDlm&quot; &quot;dLagM&quot;</code></pre>
-<div class="sourceCode" id="cb58"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" tabindex="-1"></a><span class="co"># akurasi data tes</span></span>
-<span id="cb58-2"><a href="#cb58-2" tabindex="-1"></a>mape.ardl <span class="ot">&lt;-</span> <span class="fu">MAPE</span>(fore.ardl<span class="sc">$</span>forecasts, test<span class="sc">$</span>AQI)</span>
-<span id="cb58-3"><a href="#cb58-3" tabindex="-1"></a>mape.ardl</span></code></pre></div>
-<pre><code>## [1] 0.2814882</code></pre>
-<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" tabindex="-1"></a><span class="co">#akurasi data training</span></span>
-<span id="cb60-2"><a href="#cb60-2" tabindex="-1"></a><span class="fu">GoF</span>(model.ardl)</span></code></pre></div>
-<pre><code>##             n       MAE           MPE       MAPE      sMAPE      MASE       MSE
-## model.ardl 42 0.3280956 -0.0002456131 0.01206546 0.01207054 0.6114508 0.1760173
+<div class="sourceCode" id="cb60"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" tabindex="-1"></a><span class="co"># akurasi data tes</span></span>
+<span id="cb60-2"><a href="#cb60-2" tabindex="-1"></a>mape.ardl <span class="ot">&lt;-</span> <span class="fu">MAPE</span>(fore.ardl<span class="sc">$</span>forecasts, test<span class="sc">$</span>AQI)</span>
+<span id="cb60-3"><a href="#cb60-3" tabindex="-1"></a>mape.ardl</span></code></pre></div>
+<pre><code>## [1] 0.1266511</code></pre>
+<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" tabindex="-1"></a><span class="co">#akurasi data training</span></span>
+<span id="cb62-2"><a href="#cb62-2" tabindex="-1"></a><span class="fu">GoF</span>(model.ardl)</span></code></pre></div>
+<pre><code>##             n       MAE           MPE      MAPE      sMAPE     MASE       MSE
+## model.ardl 47 0.3617827 -0.0002772485 0.0131938 0.01319829 0.640077 0.2041294
 ##                  MRAE    GMRAE
-## model.ardl 1591449996 27234.37</code></pre>
+## model.ardl 1744313542 23776.21</code></pre>
 <p>Model ARDL memiliki rata-rata kesalahan absolut relatif sekitar
-28.14% pada data testing. Artinya, secara rata-rata hasil peramalan AQI
-dari model ARDL memiliki penyimpangan sekitar 28.14% dari nilai
-aktualnya. Model tidak sebaik Koyck maupun DLM.</p>
+12.67% pada data testing. Artinya, secara rata-rata hasil peramalan AQI
+dari model ARDL memiliki penyimpangan sekitar 12.67% dari nilai
+aktualnya. Model lebih baik daripada Koyck dan DLM.</p>
 </div>
 </div>
 <div id="perbandingan" class="section level1">
 <h1>Perbandingan</h1>
-<div class="sourceCode" id="cb62"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" tabindex="-1"></a>akurasi <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(mape.koyck, mape.dlm2, mape.ardl))</span>
-<span id="cb62-2"><a href="#cb62-2" tabindex="-1"></a><span class="fu">row.names</span>(akurasi)<span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Koyck&quot;</span>,<span class="st">&quot;DLM 2&quot;</span>,<span class="st">&quot;Autoregressive&quot;</span>)</span>
-<span id="cb62-3"><a href="#cb62-3" tabindex="-1"></a><span class="fu">colnames</span>(akurasi) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;MAPE&quot;</span>)</span>
-<span id="cb62-4"><a href="#cb62-4" tabindex="-1"></a>akurasi</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" tabindex="-1"></a>akurasi <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(mape.koyck, mape.dlm2, mape.ardl))</span>
+<span id="cb64-2"><a href="#cb64-2" tabindex="-1"></a><span class="fu">row.names</span>(akurasi)<span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;Koyck&quot;</span>,<span class="st">&quot;DLM 2&quot;</span>,<span class="st">&quot;Autoregressive&quot;</span>)</span>
+<span id="cb64-3"><a href="#cb64-3" tabindex="-1"></a><span class="fu">colnames</span>(akurasi) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;MAPE&quot;</span>)</span>
+<span id="cb64-4"><a href="#cb64-4" tabindex="-1"></a>akurasi</span></code></pre></div>
 <pre><code>##                     MAPE
 ## Koyck          0.1394956
 ## DLM 2          0.2352866
-## Autoregressive 0.2814882</code></pre>
+## Autoregressive 0.1266511</code></pre>
 <p>Berdasarkan hasil evaluasi menggunakan MAPE pada data testing, model
 Koyck menghasilkan nilai MAPE sebesar 13.95%, model DLM sebesar 23.53%,
-dan model ARDL sebesar 28.15%. Dengan demikian, model Koyck memiliki
+dan model ARDL sebesar 12.67%. Dengan demikian, model ARDL memiliki
 kemampuan peramalan terbaik karena menghasilkan nilai kesalahan paling
-kecil. Sementara itu, model ARDL menghasilkan nilai MAPE terbesar
+kecil. Sementara itu, model DLM menghasilkan nilai MAPE terbesar
 sehingga memiliki kemampuan peramalan paling rendah dibandingkan kedua
 model lainnya.</p>
 </div>
 <div id="plot" class="section level1">
 <h1>Plot</h1>
-<div class="sourceCode" id="cb64"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" tabindex="-1"></a>ylim_all <span class="ot">&lt;-</span> <span class="fu">range</span>(<span class="fu">c</span>(</span>
-<span id="cb64-2"><a href="#cb64-2" tabindex="-1"></a>  test<span class="sc">$</span>AQI,</span>
-<span id="cb64-3"><a href="#cb64-3" tabindex="-1"></a>  fore.koyck<span class="sc">$</span>forecasts,</span>
-<span id="cb64-4"><a href="#cb64-4" tabindex="-1"></a>  fore.dlm2<span class="sc">$</span>forecasts,</span>
-<span id="cb64-5"><a href="#cb64-5" tabindex="-1"></a>  fore.ardl<span class="sc">$</span>forecasts</span>
-<span id="cb64-6"><a href="#cb64-6" tabindex="-1"></a>), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb64-7"><a href="#cb64-7" tabindex="-1"></a></span>
-<span id="cb64-8"><a href="#cb64-8" tabindex="-1"></a><span class="fu">plot</span>(test<span class="sc">$</span>AQI,</span>
-<span id="cb64-9"><a href="#cb64-9" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;b&quot;</span>,</span>
-<span id="cb64-10"><a href="#cb64-10" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;black&quot;</span>,</span>
-<span id="cb64-11"><a href="#cb64-11" tabindex="-1"></a>     <span class="at">ylim =</span> ylim_all,</span>
-<span id="cb64-12"><a href="#cb64-12" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Periode&quot;</span>,</span>
-<span id="cb64-13"><a href="#cb64-13" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;AQI&quot;</span>)</span>
-<span id="cb64-14"><a href="#cb64-14" tabindex="-1"></a></span>
-<span id="cb64-15"><a href="#cb64-15" tabindex="-1"></a><span class="fu">lines</span>(fore.koyck<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb64-16"><a href="#cb64-16" tabindex="-1"></a><span class="fu">lines</span>(fore.dlm2<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;orange&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb64-17"><a href="#cb64-17" tabindex="-1"></a><span class="fu">lines</span>(fore.ardl<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div>
-<p><img role="img" aria-label src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABgAAAAPACAMAAADE4EJKAAAA21BMVEUAAAAAADoAAGYAAP8AOjoAOmYAOpAAZmYAZrYA/wA6AAA6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kJA6kNtmAABmOgBmOjpmZjpmZmZmZpBmkJBmkLZmkNtmtttmtv+QOgCQOjqQZgCQZjqQZmaQkDqQkLaQtraQttuQtv+Q29uQ2/+2ZgC2Zjq2kGa2kLa2tma2tpC2tra2ttu227a229u22/+2///bkDrbkGbbtmbbtpDbtrbb27bb29vb2//b/7bb////pQD/tmb/25D/27b/29v//7b//9v////KgI/0AAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO3de4Mj1ZnYYTUBZzzGMYTLTkJsEudCloHN4oDHsEBgGGh9/08USd2t1q0llVTn1HnP+zx/7M60aU2pVOf9SSpdZnMAUppNvQEATEMAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJISAICkBAAgKQEASEoAAJIS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vSafXn/c1PaXmAAA0CcBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAACSEgCApAQAICkBAEhKAEjm1Wzt5t1Pfjz5399+Onvr70f/i98+nP3up7E2DyoSAJLZCMCyAf/l1H8vAPRLAEhmOwCz2V9O/PcCQL8EgGRePc7822+fz05N9zMIAFEJAMm82rzT/8vz0w8BThIAohIAktkKwPzlbPbs2ksUAKISAJLZDsCrhwDcfvvubDb742f3k/zlYqZ/94fFD755PAdw+93Hm//JfP7mr7PZzfs/PQZg50KgcQJAMocDsHwuaOWdb1Y/XwTg29WrhD5fB+DNR9v/ycPp5N/9v4cA7F4INE4ASGbvKaAP5huj++Gk8MvZ26sfPVu/CmhxP3/7P1m/nOjf3wdg70KgcQJAModOAi+H+zuf3b8s6Nnyf3i5vGu/uh//EIDFT24++Wl+++X9f7L6ncV/sfyVVQD2LwQaJwAksxGAH754fje7X88ensVfTPGbz+ercf/wvP5dABapWP0P6z+9mm088XP4QqBxAkAyO28Eux/364H9+u45ofunhubrALx6vFe/+t8WP374nfsU7F8INE4ASObV/vzffB3n4v78s/lqyN8/TrgPwOMP7v6Txe88PNG/+Pvi1w9cCDROAEhmIwBv379gc+P87my2e3f+LgAbd/jvBv7GvL/744ELgcYJAMm82n/v78bLd44EYP3KntXAv7vb//j3QxcCjRMAkjkcgN15PfwRwIELgcYJAMkcCMDG8/kPdgOweQ7g9eyJcwBe/U8wAkAyBwKwmPG7P9sLwIFXAT38zt2rgA5cCDROAEjmQACWP3vr8fMd7l4GuhOAp98HsDz7u/zT/oVA4wSAZA4FYDnDb/68GOK/frH3zoBD7wRev/H36/n8u813Am9fCDROAEjmUACWT+uvre677wdg77OA1r/zH+/PB+9dCDROAEjmYADmr59vj+79AOx/Gui3d7/z+GmguxcCjRMAkjkcgPntl8uP8n/7kx/v/nogAOvvA1j/zpu/Pt/5PoDtC4HGCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUgIAkJQAACQlAABJCQBAUv8fLzt7zNIdfcMAAAAASUVORK5CYII=" alt width="768" /></p>
-<p>Secara visual, hasil peramalan model Koyck cenderung lebih mendekati
-pola AQI aktual dibandingkan model DLM dan ARDL. Hal tersebut konsisten
-dengan nilai MAPE, dimana model Koyck menghasilkan kesalahan peramalan
+<div class="sourceCode" id="cb66"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" tabindex="-1"></a>ylim_all <span class="ot">&lt;-</span> <span class="fu">range</span>(<span class="fu">c</span>(</span>
+<span id="cb66-2"><a href="#cb66-2" tabindex="-1"></a>  test<span class="sc">$</span>AQI,</span>
+<span id="cb66-3"><a href="#cb66-3" tabindex="-1"></a>  fore.koyck<span class="sc">$</span>forecasts,</span>
+<span id="cb66-4"><a href="#cb66-4" tabindex="-1"></a>  fore.dlm2<span class="sc">$</span>forecasts,</span>
+<span id="cb66-5"><a href="#cb66-5" tabindex="-1"></a>  fore.ardl<span class="sc">$</span>forecasts</span>
+<span id="cb66-6"><a href="#cb66-6" tabindex="-1"></a>), <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb66-7"><a href="#cb66-7" tabindex="-1"></a></span>
+<span id="cb66-8"><a href="#cb66-8" tabindex="-1"></a><span class="fu">plot</span>(test<span class="sc">$</span>AQI,</span>
+<span id="cb66-9"><a href="#cb66-9" tabindex="-1"></a>     <span class="at">type =</span> <span class="st">&quot;b&quot;</span>,</span>
+<span id="cb66-10"><a href="#cb66-10" tabindex="-1"></a>     <span class="at">col =</span> <span class="st">&quot;black&quot;</span>,</span>
+<span id="cb66-11"><a href="#cb66-11" tabindex="-1"></a>     <span class="at">ylim =</span> ylim_all,</span>
+<span id="cb66-12"><a href="#cb66-12" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;Periode&quot;</span>,</span>
+<span id="cb66-13"><a href="#cb66-13" tabindex="-1"></a>     <span class="at">ylab =</span> <span class="st">&quot;AQI&quot;</span>)</span>
+<span id="cb66-14"><a href="#cb66-14" tabindex="-1"></a></span>
+<span id="cb66-15"><a href="#cb66-15" tabindex="-1"></a><span class="fu">lines</span>(fore.koyck<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb66-16"><a href="#cb66-16" tabindex="-1"></a><span class="fu">lines</span>(fore.dlm2<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;orange&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb66-17"><a href="#cb66-17" tabindex="-1"></a><span class="fu">lines</span>(fore.ardl<span class="sc">$</span>forecasts, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span></code></pre></div>
+<p><img role="img" aria-label src="data:image/png;base64,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" alt width="768" /></p>
+<p>Secara visual, hasil peramalan model ARDL cenderung lebih mendekati
+pola AQI aktual dibandingkan model DLM dan Koyck. Hal tersebut konsisten
+dengan nilai MAPE, dimana model ARDL menghasilkan kesalahan peramalan
 paling kecil.</p>
 </div>
 </div>

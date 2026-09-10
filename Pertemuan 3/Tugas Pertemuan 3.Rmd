@@ -198,31 +198,50 @@ $\varepsilon_t$ = error pada periode t
 
 ```{r}
 #penentuan lag optimum
-model.ardl.opt <- ardlBoundOrders(data = data.frame(data), ic = "AIC", 
+model.ardl.opt <- ardlBoundOrders(data = data.frame(train), ic = "AIC", 
                                   formula = AQI ~ pm25 )
 model.ardl.opt
 ```
 
 ```{r}
-min_p=c()
-for(i in 1:6){
-  min_p[i]=min(model.ardl.opt$Stat.table[[i]])
+min_p = c()
+
+for(i in 1:15){
+  min_p[i] = min(model.ardl.opt$Stat.table[[i]])
 }
-q_opt=which(min_p==min(min_p, na.rm = TRUE))
-p_opt=which(model.ardl.opt$Stat.table[[q_opt]] == 
-              min(model.ardl.opt$Stat.table[[q_opt]], na.rm = TRUE))
-data.frame("q_optimum" = q_opt, "p_optimum" = p_opt, 
-           "AIC"=model.ardl.opt$min.Stat)
+
+q_opt = which(min_p == min(min_p, na.rm = TRUE))
+p_opt = sapply(q_opt, function(q){
+  which(model.ardl.opt$Stat.table[[q]] ==
+          min(model.ardl.opt$Stat.table[[q]], na.rm = TRUE))
+})
+data.frame(
+  q_optimum = q_opt,
+  p_optimum = p_opt,
+  AIC = model.ardl.opt$min.Stat
+)
 ```
-Didapat q optimum sebesar 5 dan p optimum sebesar 15 dengan AIC = 124.47089 
+Didapat q optimum sebesar 13/14 dan p optimum sebesar 15 dengan AIC = 54.32641
 
 ## Pemodelan
+
+```{r}
+model.ardl1 <- ardlDlm(
+  formula = AQI ~ pm25,
+  data = train,
+  p = 15,
+  q = 13
+)
+summary(model.ardl1)
+```
+
+Model terlalu kompleks, tidak ada peubah yang signifikan. Mencari alternatif
 
 ```{r}
 model.ardl <- ardlDlm(
   formula = AQI ~ pm25,
   data = train,
-  p = 15,
+  p = 10,
   q = 5
 )
 summary(model.ardl)
@@ -234,10 +253,10 @@ AIC(model.ardl)
 BIC(model.ardl)
 ```
 
-Berdasarkan uji parsial pada taraf 5%, peubah yang berpengaruh signifikan terhadap AQI adalah $x_t$, $y_{t-1}$, dan $y_{t-2}$. Hal ini menunjukkan bahwa PM2.5 pada periode saat ini serta AQI pada satu dan dua periode sebelumnya berpengaruh signifikan terhadap AQI saat ini. Model keseluruhan dapat dilihat sebagai berikut:
+Berdasarkan uji parsial pada taraf 5%, peubah yang berpengaruh signifikan terhadap AQI adalah $x_t$, $x_{t-7}$, $x_{t-10}$, dan $y_{t-1}$, serta $y_{t-5}$ pada taraf 10%. Hal ini menunjukkan bahwa PM2.5 saat ini, PM2.5 tujuh dan sepuluh periode sebelumnya, serta AQI satu periode sebelumnya berpengaruh signifikan terhadap AQI saat ini. Selain itu, AQI lima periode sebelumnya $y_{t-5}$ juga berpengaruh signifikan pada taraf 10%.. Model keseluruhan dapat dilihat sebagai berikut:
 
 $$
-\hat{Y}_t = 6.39323 - 9.79936X_t + 12.55109X_{t-1} + ...- 0.33394Y_{t-5}
+\hat{Y}_t = 13.00310 - 8.16270X_t + ... - 0.31219Y_{t-5}
 $$
 
 ## Peramalan dan Akurasi
@@ -256,8 +275,8 @@ mape.ardl
 GoF(model.ardl)
 ```
 
-Model ARDL memiliki rata-rata kesalahan absolut relatif sekitar 28.14% pada data testing.
-Artinya, secara rata-rata hasil peramalan AQI dari model ARDL memiliki penyimpangan sekitar 28.14% dari nilai aktualnya. Model tidak sebaik Koyck maupun DLM.
+Model ARDL memiliki rata-rata kesalahan absolut relatif sekitar 12.67% pada data testing.
+Artinya, secara rata-rata hasil peramalan AQI dari model ARDL memiliki penyimpangan sekitar 12.67% dari nilai aktualnya. Model lebih baik daripada Koyck dan DLM.
 
 # Perbandingan
 
@@ -268,7 +287,7 @@ colnames(akurasi) <- c("MAPE")
 akurasi
 ```
 
-Berdasarkan hasil evaluasi menggunakan MAPE pada data testing, model Koyck menghasilkan nilai MAPE sebesar 13.95%, model DLM sebesar 23.53%, dan model ARDL sebesar 28.15%. Dengan demikian, model Koyck memiliki kemampuan peramalan terbaik karena menghasilkan nilai kesalahan paling kecil. Sementara itu, model ARDL menghasilkan nilai MAPE terbesar sehingga memiliki kemampuan peramalan paling rendah dibandingkan kedua model lainnya.
+Berdasarkan hasil evaluasi menggunakan MAPE pada data testing, model Koyck menghasilkan nilai MAPE sebesar 13.95%, model DLM sebesar 23.53%, dan model ARDL sebesar 12.67%. Dengan demikian, model ARDL memiliki kemampuan peramalan terbaik karena menghasilkan nilai kesalahan paling kecil. Sementara itu, model DLM menghasilkan nilai MAPE terbesar sehingga memiliki kemampuan peramalan paling rendah dibandingkan kedua model lainnya.
 
 # Plot
 
@@ -292,4 +311,4 @@ lines(fore.dlm2$forecasts, col = "orange", lwd = 2)
 lines(fore.ardl$forecasts, col = "green", lwd = 2)
 ```
 
-Secara visual, hasil peramalan model Koyck cenderung lebih mendekati pola AQI aktual dibandingkan model DLM dan ARDL. Hal tersebut konsisten dengan nilai MAPE, dimana model Koyck menghasilkan kesalahan peramalan paling kecil.
+Secara visual, hasil peramalan model ARDL cenderung lebih mendekati pola AQI aktual dibandingkan model DLM dan Koyck. Hal tersebut konsisten dengan nilai MAPE, dimana model ARDL menghasilkan kesalahan peramalan paling kecil.
