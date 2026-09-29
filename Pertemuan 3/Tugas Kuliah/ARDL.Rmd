@@ -426,7 +426,6 @@ modelbound <- ardlBound(data = train_2225, formula = TMA ~ RH, case = 2, max.p =
 
 Karena $p-value < 0,05$, maka Tolak $H_0$. Hasil ini menunjukkan bahwa model mengalami masalah spesifikasi, sehingga perlu dipertimbangkan bentuk hubungan nonlinier atau penambahan variabel. Dalam jangka pendek, perubahan RH berpengaruh positif dan signifikan terhadap perubahan TMA. Kenaikan RH pada periode berjalan maupun satu periode sebelumnya masing-masing berkaitan dengan kenaikan perubahan TMA sebesar 1,511 dan 1,166 satuan. Dalam jangka panjang, RH juga memiliki hubungan positif dengan TMA dengan koefisien sebesar 1,024, sehingga kenaikan RH sebesar 1 satuan berkaitan dengan kenaikan TMA sekitar 1,024 satuan.
 
-
 ## Model
 ### Jangka Pendek
 
