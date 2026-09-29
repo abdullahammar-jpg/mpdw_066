@@ -1,0 +1,772 @@
+---
+title: "ARDL"
+author: "Abdullah' Ammar Rabbaniyyin_M0401241066"
+date: "2026-09-29"
+output: rmdformats::readthedown
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Library
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(moments)
+library(ggcorrplot)
+library(corrplot)
+library(forecast)
+library(urca)
+library(tseries)
+library(dynlm)
+library(dLagM)
+library(lmtest)
+library(car)
+library(ARDL)
+library(tidyr)
+library(MASS)
+library(patchwork)
+library(dynlm)
+library(nardl)
+library(writexl)
+library(openxlsx)
+library(dynamac)
+library(e1071)
+```
+
+# Data
+
+```{r}
+data <- read_excel("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\Tugas Kuliah\\Data_Harian_2022_2024.xlsx")
+str(data)
+```
+
+Data yang digunakan berupa data harian periode 1 Januari 2022 - 31 Desember 2024. Pada analisis ini akan digunakan `TMA` sebagai peubah $Y$ dan `RH` sebagai peubah $X$.
+
+# Eksplorasi Data
+## Statistik Deskriptif
+### Deskriptif Dasar
+
+```{r}
+summary(data[, c("TMA", "RH")])
+```
+
+Nilai TMA berada pada rentang 555,4–781,2 dengan rata-rata 625,3 dan median 620,0, sedangkan RH berada pada rentang 67,03%–94,31% dengan rata-rata 85,29% dan median 86,29%. Rata-rata TMA yang sedikit lebih besar dari median menunjukkan distribusi TMA cenderung menceng ke kanan, sementara RH cenderung sedikit menceng ke kiri. Secara umum, sebagian besar nilai TMA berada pada rentang 597,7–650,1 dan RH pada 82,92%–88,53%.
+
+### Simpangan Baku
+
+```{r}
+sd_tma <- sd(data$TMA, na.rm = TRUE)
+sd_rh <- sd(data$RH, na.rm = TRUE)
+sd_tma
+sd_rh
+```
+
+Nilai standar deviasi (SD) TMA sebesar 39,45, sedangkan RH sebesar 4,71. Hal ini menunjukkan bahwa variasi nilai TMA lebih besar dibandingkan RH, dengan nilai TMA lebih menyebar dari rata-ratanya, sementara nilai RH relatif lebih terkonsentrasi di sekitar rata-ratanya.
+
+### Skewness
+
+```{r}
+skew_tma <- skewness(data$TMA, na.rm = TRUE)
+skew_rh <- skewness(data$RH, na.rm = TRUE)
+skew_tma
+skew_rh
+```
+
+Nilai skewness TMA sebesar 0,53 menunjukkan bahwa distribusi TMA miring ke kanan secara moderat, sedangkan RH sebesar -0,99 menunjukkan distribusi RH miring ke kiri.
+
+### Kurtosis
+
+```{r}
+kurt_tma <- kurtosis(data$TMA, na.rm = TRUE)
+kurt_rh <- kurtosis(data$RH, na.rm = TRUE)
+kurt_tma
+kurt_rh
+```
+
+Nilai kurtosis TMA sebesar -0,02 menunjukkan bentuk distribusinya mendekati normal, sedangkan RH sebesar 1,02 menunjukkan distribusi yang lebih runcing dengan ekor yang relatif lebih berat dibandingkan distribusi normal.
+
+## Time Series
+### Plot Time Series TMA
+
+```{r}
+ggplot(data = data, aes(x = Date, y = TMA)) +
+  geom_line() +
+  labs(title = "Time Series Plot of TMA", x = "Date", y = "TMA") +
+  theme_minimal()
+```
+
+### Plot Time Series RH
+
+```{r}
+ggplot(data = data, aes(x = Date, y = RH)) +
+  geom_line() +
+  labs(title = "Time Series Plot of RH", x = "Date", y = "RH") +
+  theme_minimal()
+```
+
+### Plot Gabungan
+
+```{r}
+data_long <- data %>%
+  pivot_longer(cols = c(TMA, RH),
+               names_to = "Variabel",
+               values_to = "Nilai") %>% 
+  mutate(Variabel = factor(Variabel, levels = c("TMA", "RH")))
+
+ggplot(data_long, aes(x = Date, y = Nilai)) +
+  geom_line(color = "steelblue") +
+  facet_wrap(~ Variabel, scales = "free_y", ncol = 1) +
+  labs(title = "Time Series TMA dan RH", x = "Date", y = "Nilai") +
+  theme_minimal()
+```
+
+Dari time series plot, terlihat bahwa nilai TMA dan RH sama-sama mengalami fluktuasi dari tahun 2022–2024 dan belum menunjukkan pola yang benar-benar konstan. TMA cenderung berada pada kisaran 600–700, dengan beberapa lonjakan hingga sekitar 780 dan penurunan hingga sekitar 555, serta terlihat perubahan pola sepanjang periode pengamatan. Sementara itu, RH umumnya berada pada kisaran 80–92%, tetapi mengalami penurunan cukup jelas pada pertengahan hingga akhir 2023 hingga sekitar 68–75%, kemudian kembali meningkat pada awal 2024.
+
+### Matriks Korelasi
+
+```{r}
+cor_matrix <- cor(data[, c("TMA", "RH")], use = "complete.obs")
+cor_matrix
+```
+
+```{r}
+corrplot(cor_matrix, method = "color", addCoef.col = "black",
+         tl.col = "black", tl.srt = 50, number.cex = 0.8,
+         title = "Matriks Korelasi",
+         mar = c(0,0,1,0))
+```
+
+Berdasarkan matriks korelasi, nilai korelasi antara TMA dan RH sebesar 0,53. Hal ini menunjukkan bahwa terdapat hubungan positif (sedang) antara TMA dan RH, sehingga ketika nilai RH meningkat, TMA cenderung meningkat pula. Namun, korelasi sebesar 0,53 belum menunjukkan hubungan yang sangat kuat, sehingga perubahan TMA tidak sepenuhnya dapat dijelaskan oleh RH saja.
+
+# Data Splitting
+
+```{r}
+total_rows <- 1096
+test_size <- 160
+
+train_index <- 1:(total_rows - test_size)
+test_index  <- (total_rows - test_size + 1):total_rows
+
+train_2225 <- data[train_index, ]
+test_2225  <- data[test_index, ]
+str(train_2225)
+```
+
+```{r}
+str(test_2225)
+```
+
+```{r}
+train_2225.ts<-ts(train_2225)
+test_2225.ts<-ts(test_2225)
+```
+
+Data training terdiri dari 936 observasi dengan periode pengamatan mulai 1 Januari 2022, sedangkan data testing terdiri dari 160 observasi yang dimulai pada 25 Juli 2024.
+
+## Time Series Data Split
+
+```{r}
+train_2225 <- train_2225 %>%
+  mutate(DataType = "Train")
+
+test_2225 <- test_2225 %>%
+  mutate(DataType = "Test")
+```
+
+### Plot Time Series TMA
+
+```{r}
+combined_data <- bind_rows(train_2225, test_2225)
+data_long <- combined_data %>%
+  pivot_longer(cols = c(TMA),
+               names_to = "Variabel",
+               values_to = "Nilai")
+
+ggplot(data_long, aes(x = Date, y = Nilai, color = DataType)) +
+  geom_line() +
+  facet_wrap(~ Variabel, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("Train" = "#00BFC4", "Test" = "#F8766D")) +
+  labs(title = "Time Series of TMA (Train vs. Test)",
+       x = "Date",
+       y = "Tinggi Muka Air (cm)",
+       color = "Data Type") +
+  theme_minimal()
+```
+
+### Plot Time Series RH
+
+```{r}
+combined_data <- bind_rows(train_2225, test_2225)
+data_long <- combined_data %>%
+  pivot_longer(cols = c(RH),
+               names_to = "Variabel",
+               values_to = "Nilai")
+
+ggplot(data_long, aes(x = Date, y = Nilai, color = DataType)) +
+  geom_line() +
+  facet_wrap(~ Variabel, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("Train" = "#00BFC4", "Test" = "#F8766D")) +
+  labs(title = "Time Series of rh (Train vs. Test)",
+       x = "Date",
+       y = "Kelembapan relatif Kota Bogor (%)",
+       color = "Data Type") +
+  theme_minimal()
+```
+
+### Plot Time Series Gabungan
+
+```{r}
+combined_data <- bind_rows(train_2225, test_2225)
+data_long <- combined_data %>%
+  pivot_longer(cols = c(TMA, RH), 
+               names_to = "Variabel",
+               values_to = "Nilai")
+
+ggplot(data_long, aes(x = Date, y = Nilai, color = DataType)) +
+  geom_line() +
+  facet_wrap(~ Variabel, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("Train" = "#00BFC4", "Test" = "#F8766D")) +
+  labs(title = "Time Series of Multiple Variables (Train vs. Test)",
+       x = "Date",
+       y = "Value",
+       color = "Data Type") +
+  theme_minimal()
+```
+
+# Kestasioneran Data
+## Plot ACF
+### Plot ACF TMA
+
+```{r}
+acf_TMA <- ggAcf(train_2225$TMA) + labs(title = "ACF TMA")
+acf_TMA
+```
+
+### Plot ACF RH
+
+```{r}
+acf_RH <- ggAcf(train_2225$RH) + labs(title = "ACF RH")
+acf_RH
+```
+
+### Plot ACF Gabungan
+
+```{r}
+combined_acf <- acf_TMA + acf_RH 
+combined_acf
+```
+
+Berdasarkan plot ACF, TMA dan RH sama-sama menunjukkan autokorelasi positif yang kuat, dengan nilai ACF pada lag awal yang tinggi dan kemudian menurun secara bertahap. Pada TMA, ACF lag 1 sekitar 0,79, sedangkan pada RH sekitar 0,83, dan keduanya masih berada di atas batas signifikansi hingga lag 30. Hal ini menunjukkan bahwa nilai TMA maupun RH pada suatu periode memiliki ketergantungan terhadap nilai pada periode sebelumnya, sehingga kedua deret waktu memiliki pola temporal yang kuat dan belum bersifat acak. Pola ACF TMA dan RH yang meluruh perlahan merupakan ciri khas utama dari data deret waktu yang tidak stasioner dalam rata-rata (non-stationary in mean).
+
+## Plot PACF
+### Plot PACF TMA
+
+```{r}
+pacf_TMA <- ggPacf(train_2225$TMA) + labs(title = "PACF TMA")
+pacf_TMA
+```
+
+### Plot PACF RH
+
+```{r}
+pacf_RH <- ggPacf(train_2225$RH) + labs(title = "PACF RH")
+pacf_RH
+```
+
+### Plot PACF Gabungan
+
+```{r}
+combined_pacf <- pacf_TMA + pacf_RH
+combined_pacf
+```
+
+Berdasarkan plot PACF, pada TMA terlihat lonjakan yang sangat kuat pada lag 1 (≈0,79), kemudian beberapa lag berikutnya masih menunjukkan nilai positif tetapi jauh lebih kecil. Pada RH, lonjakan terbesar juga terdapat pada lag 1 (≈0,83), kemudian menurun tajam pada lag 2 dan seterusnya dengan sebagian besar lag berikutnya berada di sekitar nol (terdapat pola cut-off). Hal ini menunjukkan bahwa nilai periode sebelumnya (lag 1) memiliki pengaruh langsung yang kuat terhadap nilai saat ini pada TMA maupun RH.
+
+## Uji ADF
+
+$$
+\begin{aligned}
+H_0 &: \text{Data memiliki unit root (tidak stasioner)}\\
+H_1 &: \text{Data tidak memiliki unit root (stasioner)}
+\end{aligned}
+$$
+
+### Uji ADF TMA
+
+```{r}
+adf.test(train_2225$TMA)
+```
+
+Berdasarkan hasil Augmented Dickey-Fuller (ADF), pada TMA diperoleh nilai statistik ADF sebesar −4,0015 dengan $p-value = 0,01$. Karena $p-value < 0,05$, maka Tolak $H_0$, sehingga TMA dapat dinyatakan stasioner. 
+
+### Uji ADF RH
+
+```{r}
+adf.test(train_2225$RH)
+```
+
+Sementara itu, pada RH diperoleh nilai statistik ADF sebesar −3,3561 dengan p-value 0,06101. Karena p-value > 0,05, maka Tak Tolak $H_0$, sehingga RH belum dapat dinyatakan stasioner pada taraf signifikansi 5%. Dengan demikian, TMA sudah stasioner, sedangkan RH perlu dilakukan differencing sebelum digunakan dalam pemodelan runtun waktu.
+
+## Plot CCF
+### Plot CCF TMA dan RH
+
+```{r}
+ccf_result3 <- ggCcf(train_2225$TMA, train_2225$RH, lag.max=9, plot = TRUE)+ggtitle("CCF antara TMA dan RH")
+ccf_result3
+```
+
+Berdasarkan plot CCF (Cross-Correlation Function) antara TMA dan RH, terlihat bahwa nilai CCF pada lag 0 sebesar sekitar 0,52 dan bernilai positif. Nilai CCF pada seluruh lag yang ditampilkan juga berada di atas batas signifikansi, sehingga menunjukkan adanya hubungan silang yang signifikan antara TMA dan RH pada berbagai lag. Nilai CCF meningkat hingga sekitar lag 0–1, kemudian cenderung menurun pada lag berikutnya. Hal ini menunjukkan bahwa perubahan RH berkaitan dengan perubahan TMA, termasuk pada beberapa periode sebelumnya maupun sesudahnya, dengan hubungan terkuat berada di sekitar lag 0–1.
+
+# First Difference
+## Differencing
+
+```{r}
+DTMA <- diff(train_2225$TMA, differences = 1)
+DRH <- diff(train_2225$RH, differences = 1)
+
+# Gabungkan dalam dataframe
+df <- data.frame(DTMA, DRH)
+df.ts<-ts(df)
+head(df)
+```
+
+## Plot ACF
+### Plot ACF DTMA
+
+```{r}
+acf_DTMA <- ggAcf(DTMA) + labs(title = "ACF DTMA")
+acf_DTMA
+```
+
+### Plot ACF DRH
+
+```{r}
+acf_DRH <- ggAcf(DRH) + labs(title = "ACF DRH")
+acf_DRH
+```
+
+### Plot ACF Gabungan
+
+```{r}
+combined_acf <- acf_DTMA + acf_DRH
+combined_acf
+```
+
+Berdasarkan plot ACF setelah differencing (terdapat pola cut-off), yaitu DTMA dan DRH, terlihat bahwa nilai autokorelasi keduanya sudah jauh lebih kecil dibandingkan sebelum differencing. Pada DTMA, sebagian besar nilai ACF berada di sekitar nol, meskipun terdapat beberapa lonjakan yang melewati batas signifikansi. Sementara itu, DRH juga menunjukkan pola ACF yang relatif kecil dan berfluktuasi di sekitar nol, dengan beberapa lag awal yang masih signifikan. Secara umum, differencing telah mengurangi autokorelasi kuat pada data awal, sehingga DTMA dan DRH dapat dikatakan stasioner.
+
+## Plot PACF
+### Plot PACF DTMA
+
+```{r}
+pacf_DTMA <- ggPacf(DTMA) + labs(title = "PACF DTMA")
+pacf_DTMA
+```
+
+### Plot PACF DRH
+
+```{r}
+pacf_DRH <- ggPacf(DRH) + labs(title = "PACF DRH")
+pacf_DRH
+```
+
+### Plot PACF Gabungan
+
+```{r}
+combined_pacf <- pacf_DTMA + pacf_DRH
+combined_pacf
+```
+
+Berdasarkan plot PACF setelah differencing, pada DTMA terlihat lonjakan negatif yang cukup kuat pada lag 1, kemudian nilai PACF berangsur mendekati nol (meluruh), meskipun beberapa lag masih melewati batas signifikansi. Pada DRH, pola serupa terlihat dengan lonjakan negatif terbesar pada lag 1, kemudian secara bertahap mengecil pada lag-lag berikutnya. Hal ini menunjukkan bahwa setelah differencing masih terdapat ketergantungan jangka pendek, terutama pada lag awal, tetapi sebagian besar lag berikutnya memiliki pengaruh yang relatif kecil.
+
+## Uji ADF
+
+$$
+\begin{aligned}
+H_0 &: \text{Data memiliki unit root (tidak stasioner)}\\
+H_1 &: \text{Data tidak memiliki unit root (stasioner)}
+\end{aligned}
+$$
+
+### Uji ADF DTMA
+
+```{r}
+adf.test(DTMA)
+```
+
+Berdasarkan hasil Augmented Dickey-Fuller (ADF) pada DTMA, diperoleh statistik ADF sebesar −12,518 dengan $p-value 0,01$. Karena $p-value < 0,05$, maka Tolak $H_0$, sehingga DTMA dapat dinyatakan stasioner.
+
+### Uji ADF DRH
+
+```{r}
+adf.test(DRH)
+```
+
+Berdasarkan hasil Augmented Dickey-Fuller (ADF) pada DRH, diperoleh statistik ADF sebesar −13,91 dengan $p-value 0,01$. Karena $p-value < 0,05$, maka Tolak $H_0$, sehingga DRH dapat dinyatakan stasioner. Artinya, setelah dilakukan first differencing pada RH, deret waktu DRH sudah stasioner.
+
+## Plot CCF
+### Plot CCF DTMA dan DRH
+
+```{r}
+ccf_result3 <- ggCcf(DTMA, DRH, lag.max=9, plot = TRUE)+ggtitle("CCF antara DTMA dan DRH")
+ccf_result3
+```
+
+Berdasarkan plot CCF antara DTMA dan DRH, sebagian besar nilai korelasi silang berada di dalam batas signifikansi. Namun, terdapat lonjakan positif yang melewati batas signifikansi pada lag 0 dan lag 1, dengan nilai sekitar 0,09. Hal ini menunjukkan adanya hubungan positif yang signifikan antara perubahan TMA dan perubahan RH pada periode yang sama (lag 0) serta satu periode setelahnya (lag 1). Sementara itu, lonjakan pada lag lainnya umumnya tidak signifikan. Dengan demikian, lag 0 dan lag 1 merupakan lag yang perlu diperhatikan dalam hubungan antara DTMA dan DRH.
+
+# Dynardl (dynmac)
+## Uji Kointegrasi
+
+```{r}
+modelbound <- ardlBound(data = train_2225, formula = TMA ~ RH, case = 2, max.p = 1, max.q = 9)
+```
+
+Karena $p-value < 0,05$, maka Tolak $H_0$. Hasil ini menunjukkan bahwa model mengalami masalah spesifikasi, sehingga perlu dipertimbangkan bentuk hubungan nonlinier atau penambahan variabel. Dalam jangka pendek, perubahan RH berpengaruh positif dan signifikan terhadap perubahan TMA. Kenaikan RH pada periode berjalan maupun satu periode sebelumnya masing-masing berkaitan dengan kenaikan perubahan TMA sebesar 1,511 dan 1,166 satuan. Dalam jangka panjang, RH juga memiliki hubungan positif dengan TMA dengan koefisien sebesar 1,024, sehingga kenaikan RH sebesar 1 satuan berkaitan dengan kenaikan TMA sekitar 1,024 satuan.
+
+
+## Model
+### Jangka Pendek
+
+```{r}
+modelardl <- dynardl(
+  DTMA ~ DRH,
+  data = df,
+  lags = list(
+    "DTMA" = 1:9,
+    "DRH" = 1
+  ),
+  ec = TRUE
+)
+```
+
+Warning “Multiple lags included in implied co-integrated relationship” menunjukkan bahwa model memasukkan beberapa lag dalam hubungan kointegrasi yang terbentuk, sehingga perlu diperhatikan kembali apakah struktur lag tersebut sudah sesuai dengan model yang ingin digunakan.
+
+```{r}
+summary(modelardl)
+```
+
+Nilai $R^2$ sebesar 0,7056 menunjukkan bahwa sekitar 70,56% variasi DTMA dapat dijelaskan oleh variabel-variabel dalam model, sedangkan 29,44% sisanya dijelaskan oleh faktor lain di luar model. Secara simultan, model signifikan dengan $p-value < 2,2 × 10^{-16}$, sehingga terdapat setidaknya satu variabel penjelas yang berpengaruh terhadap DTMA.
+
+```{r}
+AIC(modelardl$model)
+```
+
+Nilai AIC yang diperoleh sebesar 8507,914 semakin kecil AIC suatu model, maka semakin baik model tersebut.
+
+### Jangka Panjang
+
+```{r}
+modelardll <- dynardl(
+  formula = TMA ~ RH,
+  data = train_2225,
+  levels = c("RH"),
+  ec = FALSE,
+)
+```
+
+Pesan “Lagged dependent variable added to model formula” menunjukkan bahwa fungsi dynardl() secara otomatis menambahkan lag dari variabel dependen (TMA) ke dalam model. Sementara itu, pesan “Dependent variable to be run in levels” mengonfirmasi bahwa TMA dimodelkan dalam bentuk level, bukan dalam bentuk first difference. Dengan demikian, model ini menggunakan TMA pada level dengan memasukkan lag TMA sebagai bagian dari model dinamis.
+
+```{r}
+summary(modelardll)
+```
+
+Nilai $R^2$ sebesar 0,6526 menunjukkan bahwa sekitar 65,26% variasi TMA dapat dijelaskan oleh l.1.TMA dan RH dalam model. Secara simultan, model signifikan $p-value < 2,2 × 10^{-16}$, sehingga variabel dalam model secara bersama-sama berhubungan signifikan dengan TMA.
+
+```{r}
+AIC(modelardll$model)
+```
+
+Nilai AIC yang diperoleh sebesar 8620,977 semakin kecil AIC suatu model, maka semakin baik model tersebut.
+
+## Uji Asumsi
+### Uji Autokorelasi Residual (Box-Ljung Test)
+
+$$
+\begin{aligned}
+H_0 &: \text{Tidak terdapat autokorelasi pada residual hingga lag ke-20} \\
+H_1 &: \text{Terdapat autokorelasi pada residual hingga lag ke-20}
+\end{aligned}
+$$
+
+```{r}
+res1 <- residuals(modelardl$model)
+Box.test(res1, lag = 20, type = "Ljung-Box")
+```
+
+Berdasarkan uji Box-Ljung, diperoleh $p-value = 0,5318 > 0,05$, sehingga Tak Tolak $H_0$. Artinya, tidak terdapat bukti yang cukup adanya autokorelasi pada residual hingga lag ke-20. Artinya, residual model tidak memiliki autokorelasi yang signifikan.
+
+### Uji Normalitas (Jarque-Bera Test)
+
+$$
+\begin{aligned}
+H_0 &: \text{Residual berdistribusi normal} \\
+H_1 &: \text{Residual tidak berdistribusi normal}
+\end{aligned}
+$$
+
+```{r}
+jarque.bera.test(res1)
+```
+
+Berdasarkan uji Jarque-Bera, diperoleh $p-value < 2,2 × 10^{-16} < 0,05$, sehingga Tolak $H_0$. Artinya, residual model tidak berdistribusi normal. Dengan demikian, asumsi normalitas residual pada model belum terpenuhi. 
+
+### Uji Heteroskedastisitas (Breush-Pagan Test)
+
+```{r}
+fitted_val1 <- fitted(modelardl$model)
+bptest(res1 ~ fitted_val1)
+```
+
+Berdasarkan uji Breusch-Pagan, diperoleh $p-value = 0,03827 < 0,05$, sehingga Tolak $H_0$. Artinya, terdapat heteroskedastisitas pada residual, sehingga varians residual tidak konstan. Artinya, asumsi homoskedastisitas belum terpenuhi pada model.
+
+
+# Forecasting
+### Data Training
+
+```{r}
+# Differencing
+DTMA <- diff(train_2225$TMA, differences = 1)
+DRH  <- diff(train_2225$RH, differences = 1)
+
+# Gabungkan menjadi data.frame
+train_baru <- data.frame(DRH)
+colnames(train_baru) <- c("DRH")
+```
+
+```{r}
+coefs <- summary(modelardl)$coefficients
+
+intercept <- coefs["(Intercept)", "Estimate"]
+b1 <- coefs["l.1.DRH", "Estimate"]
+```
+
+```{r}
+train_baru$DTMA_pred <- intercept +
+  b1 * train_baru$DRH
+```
+
+```{r}
+train_baru$TMA_pred <- NA
+train_baru$TMA_pred[1] <- train_2225$TMA[1] + train_baru$DTMA_pred[1]
+
+for(i in 2:nrow(train_baru)) {
+  train_baru$TMA_pred[i] <- train_baru$TMA_pred[i-1] + train_baru$DTMA_pred[i]
+}
+```
+
+```{r}
+TMA_actual <- train_2225$TMA[-1]  # karena ada differencing
+TMA_pred <- train_baru$TMA_pred
+```
+
+```{r}
+plot(TMA_actual, type = "l", col = "black", main = "Train: Actual vs Predicted TMA")
+lines(TMA_pred, col = "blue")
+legend("topleft", legend = c("Actual", "Predicted"), col = c("black", "blue"), lty = 1)
+```
+
+```{r}
+MAE <- mean(abs(TMA_pred - TMA_actual), na.rm = TRUE)
+RMSE <- sqrt(mean((TMA_pred - TMA_actual)^2, na.rm = TRUE))
+MAPE <- mean(abs((TMA_actual - TMA_pred) / TMA_actual), na.rm = TRUE) * 100
+
+cat("MAE:", MAE, "\n")
+cat("RMSE:", RMSE, "\n")
+cat("MAPE:", MAPE, "%\n")
+```
+
+Berdasarkan evaluasi pada data training, diperoleh MAE sebesar 31,59, RMSE sebesar 40,81, dan MAPE sebesar 5,10%. Nilai MAPE menunjukkan bahwa rata-rata kesalahan prediksi model terhadap nilai aktual pada data training sekitar 5,10%. Hasil ini menunjukkan bahwa model memiliki kemampuan fitting yang cukup baik terhadap data training. Namun, hasil tersebut belum dapat digunakan untuk menilai kemampuan model dalam melakukan prediksi pada data yang belum pernah digunakan dalam proses estimasi, sehingga diperlukan evaluasi menggunakan data testing untuk melihat kemampuan generalisasi model.
+
+### Data Testing
+
+```{r}
+str(test_2225)
+```
+
+```{r}
+summary(test_2225)
+```
+
+```{r}
+TDRH <- diff(test_2225$RH, differences = 1)
+
+test_baru <- data.frame(TDRH)
+```
+
+```{r}
+colnames(test_baru) <- c("DRH")
+```
+
+```{r}
+coefs <- summary(modelardl)$coefficients
+coefs
+```
+
+```{r}
+intercept <- coefs["(Intercept)", "Estimate"]
+b1 <- coefs["l.1.DRH", "Estimate"]
+```
+
+```{r}
+test_baru$DTMA_pred <- intercept +
+  b1 * test_baru$DRH
+```
+
+```{r}
+last_TMA_train <- tail(train_2225$TMA, 1)
+last_TMA_train
+```
+
+```{r}
+test_baru$TMA_pred <- NA
+test_baru$TMA_pred[1] <- last_TMA_train + test_baru$DTMA_pred[1]
+
+for(i in 2:nrow(test_baru)) {
+  test_baru$TMA_pred[i] <- test_baru$TMA_pred[i-1] + test_baru$DTMA_pred[i]
+}
+```
+
+```{r}
+TMA_actual <- test_2225$TMA[-1]  # karena differencing
+TMA_pred <- test_baru$TMA_pred
+
+mse <- mean((TMA_actual - TMA_pred)^2, na.rm = TRUE)
+rmse <- sqrt(mse)
+```
+
+```{r}
+date_seq <- seq.Date(from = as.Date("2024-07-25"), by = "day", length.out = length(TMA_pred))
+```
+
+```{r}
+plot(TMA_actual, type = "l", col = "black", main = "Actual vs Predicted TMA")
+lines(TMA_pred, col = "blue")
+legend("topleft", legend = c("Actual", "Predicted"), col = c("black", "blue"), lty = 1)
+```
+
+```{r}
+plot(date_seq, TMA_actual, type = "l", col = "black",
+     main = "Actual vs Predicted TMA", xlab = "Tanggal", ylab = "TMA")
+lines(date_seq, TMA_pred, col = "blue")
+legend("topleft", legend = c("Actual", "Predicted"),
+       col = c("black", "blue"), lty = 1)
+```
+
+```{r}
+# Asumsikan 'aktual_Y_test' adalah nilai Y aktual dari data testing
+MAE <- mean(abs(TMA_pred - TMA_actual))
+RMSE <- sqrt(mean((TMA_pred - TMA_actual)^2))
+# Hitung MAPE jika nilai aktual Y tidak nol
+MAPE <- mean(abs((TMA_actual - TMA_pred) / TMA_actual)) * 100
+
+cat("MAE:", MAE, "\n")
+cat("RMSE:", RMSE, "\n")
+cat("MAPE:", MAPE, "%\n")
+```
+
+Berdasarkan evaluasi pada data testing, diperoleh MAE sebesar 20,10, RMSE sebesar 28,13, dan MAPE sebesar 3,12%. Nilai MAPE menunjukkan bahwa rata-rata kesalahan prediksi model terhadap nilai aktual pada data testing sekitar 3,12%. Hasil ini menunjukkan bahwa model mampu menghasilkan prediksi yang cukup dekat dengan nilai aktual pada data yang tidak digunakan dalam proses pembentukan model, sehingga model memiliki kemampuan generalisasi yang baik.
+
+### Prediksi 2025
+
+```{r}
+data_prediksi_15 <- read_excel("D:\\Mine\\Kuliah Journey\\Semester 5\\MPDW\\mpdw_066\\Pertemuan 3\\Tugas Kuliah\\Data_Jan25_Mar25.xlsx")
+data_prediksi_15 <- tail(data_prediksi_15, 120)
+data_prediksi_15$Date <- as.Date(data_prediksi_15$Date)
+str(data_prediksi_15)
+```
+
+```{r}
+DRH_15 <- diff(data_prediksi_15$RH, differences = 1)
+
+test_15 <- data.frame(DRH = DRH_15)
+```
+
+```{r}
+colnames(test_15) <- c("DRH")
+```
+
+```{r}
+coefs <- summary(modelardl)$coefficients
+coefs
+```
+
+```{r}
+intercept <- coefs["(Intercept)", "Estimate"]
+b1 <- coefs["l.1.DRH", "Estimate"]
+```
+
+```{r}
+test_15$DTMA_pred <- intercept +
+  b1 * test_15$DRH
+```
+
+```{r}
+test_15$TMA_pred <- NA
+test_15$TMA_pred[1] <- data_prediksi_15$TMA[1] + test_15$DTMA_pred[1]
+
+for(i in 2:nrow(test_15)) {
+  test_15$TMA_pred[i] <- test_15$TMA_pred[i-1] + test_15$DTMA_pred[i]
+}
+```
+
+```{r}
+tanggal_prediksi <- seq.Date(from = as.Date("2025-01-01"), by = "day", length.out = nrow(test_15))
+```
+
+```{r}
+hasil_prediksi <- data.frame(
+  date = tanggal_prediksi,
+  TMA_actual = data_prediksi_15$TMA[-1],  # karena differencing
+  TMA_pred = test_15$TMA_pred
+)
+hasil_prediksi
+```
+
+```{r}
+# Tentukan nama file Excel
+nama_file_excel4 <- "hasil_peramalan.xlsx"
+
+# Tulis data frame ke file Excel
+write_xlsx(hasil_prediksi, path = nama_file_excel4)
+```
+
+```{r}
+ggplot(hasil_prediksi, aes(x = date, y = TMA_pred)) +
+  geom_line(color = "blue", linewidth = 1) +
+  labs(
+    title = "Prediksi Tinggi Muka Air (TMA)",
+    x = "Tanggal",
+    y = "TMA Prediksi"
+  ) +
+  theme_minimal()
+```
+
+Grafik menunjukkan hasil prediksi Tinggi Muka Air (TMA) pada periode Januari hingga akhir Maret. Nilai prediksi berada pada kisaran sekitar 637–654, dengan pola yang berfluktuasi dari waktu ke waktu. Pada awal Januari, TMA berada di sekitar 637–639 kemudian cenderung meningkat hingga mendekati 650. Selama Februari hingga Maret, TMA mengalami beberapa kenaikan dan penurunan yang cukup tajam, dengan nilai tertinggi sekitar 654 pada pertengahan Maret dan beberapa penurunan hingga sekitar 638–640. Secara umum, meskipun terdapat fluktuasi harian, prediksi TMA menunjukkan kecenderungan meningkat dari awal periode hingga akhir Maret. 
+
+```{r}
+plot(hasil_prediksi$date, hasil_prediksi$TMA_actual, type = "l", col = "black",
+     ylab = "TMA", xlab = "Tanggal", main = "TMA Aktual vs Prediksi", cex.axis = 1.2)
+lines(hasil_prediksi$date, hasil_prediksi$TMA_pred, col = "blue")
+legend("topleft", legend = c("Aktual", "Prediksi"), col = c("black", "blue"), lty = 1)
+```
+
+Prediksi TMA cukup mengikuti pola umum aktual, tetapi belum mampu menangkap lonjakan ekstrem. Hasil ini dapat digunakan sebagai monitoring kondisi normal, tetapi perlu dikombinasikan dengan pemantauan aktual untuk mendeteksi kenaikan TMA mendadak yang berpotensi memerlukan respons cepat, seperti banjir mendadak.
+
+```{r}
+MAE <- mean(abs(hasil_prediksi$TMA_actual - hasil_prediksi$TMA_pred))
+RMSE <- sqrt(mean((hasil_prediksi$TMA_actual - hasil_prediksi$TMA_pred)^2))
+MAPE <- mean(abs((hasil_prediksi$TMA_actual - hasil_prediksi$TMA_pred) / hasil_prediksi$TMA_actual)) * 100
+
+cat("MAE:", MAE, "\n")
+cat("RMSE:", RMSE, "\n")
+cat("MAPE:", MAPE, "%\n")
+```
+
+Berdasarkan evaluasi prediksi tahun 2025, diperoleh MAE sebesar 14,55, RMSE sebesar 26,64, dan MAPE sebesar 2,12%. Nilai MAPE menunjukkan bahwa rata-rata kesalahan prediksi terhadap nilai aktual tahun 2025 sekitar 2,12%. Hasil ini menunjukkan bahwa model mampu menghasilkan prediksi yang cukup dekat dengan nilai aktual pada periode 2025, dengan tingkat kesalahan relatif yang rendah. 
+
+# Kesimpulan
+
+Kemampuan model ARDL dalam menangkap hubungan dinamis antara kelembapan relatif (RH) dan tinggi muka air (TMA) menghasilkan prediksi TMA yang mampu mengikuti pola fluktuasi dari waktu ke waktu. Dengan MAPE prediksi tahun 2025 sebesar 2,12%, model menunjukkan tingkat kesalahan prediksi yang relatif rendah. Hasil peramalan ini dapat dimanfaatkan sebagai informasi pendukung pemantauan tinggi muka air dan sistem peringatan dini hidrologi, khususnya dalam mengantisipasi perubahan TMA yang berpotensi meningkatkan risiko kejadian hidrologis seperti banjir.
