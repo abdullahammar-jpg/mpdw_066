@@ -437,12 +437,16 @@ Berdasarkan hasil uji One Sample t-test pada sisaan model ARIMA(0,1,2), diperole
 # Overfitting
 
 ```{r}
-model2.da=Arima(train.diff, order=c(1,0,2),method="ML")
+model2.da=Arima(train.diff, order=c(0,0,3),method="ML")
 summary(model2.da) 
 ```
 
 ```{r}
 lmtest::coeftest(model2.da)
+```
+
+```{r}
+AIC(model2.da)
 ```
 
 # Model Terbaik
